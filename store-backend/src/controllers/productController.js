@@ -1,19 +1,29 @@
-const prisma = require('../utils/prisma');
+const Product = require('../models/Product');
 
 // Get all products
 const getAllProducts = async (req, res) => {
   try {
-    const { category, minPrice, maxPrice } = req.query;
+    const { category, minPrice, maxPrice, orderBy, order, limit } = req.query;
     
-    const where = {};
-    if (category) where.category = category;
+    const options = {};
+    if (category) options.category = category;
+    if (orderBy) {
+      options.orderBy = orderBy;
+      options.order = order || 'asc';
+    }
+    if (limit) options.limit = parseInt(limit);
+
+    let products = await Product.findAll(options);
+    
+    // Apply price filtering after fetching (since Firebase doesn't support complex queries)
     if (minPrice || maxPrice) {
-      where.price = {};
-      if (minPrice) where.price.gte = parseFloat(minPrice);
-      if (maxPrice) where.price.lte = parseFloat(maxPrice);
+      products = products.filter(product => {
+        if (minPrice && product.price < parseFloat(minPrice)) return false;
+        if (maxPrice && product.price > parseFloat(maxPrice)) return false;
+        return true;
+      });
     }
 
-    const products = await prisma.product.findMany({ where });
     res.json(products);
   } catch (error) {
     console.error(error);
@@ -25,9 +35,7 @@ const getAllProducts = async (req, res) => {
 const getProductById = async (req, res) => {
   try {
     const { id } = req.params;
-    const product = await prisma.product.findUnique({
-      where: { id: parseInt(id) }
-    });
+    const product = await Product.findById(id);
 
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
@@ -45,8 +53,13 @@ const createProduct = async (req, res) => {
   try {
     const { name, description, price, imageUrl, category, stock } = req.body;
 
-    const product = await prisma.product.create({
-      data: { name, description, price, imageUrl, category, stock }
+    const product = await Product.create({
+      name, 
+      description, 
+      price: parseFloat(price), 
+      imageUrl, 
+      category, 
+      stock: parseInt(stock) || 0
     });
 
     res.status(201).json({ message: 'Product created', product });
@@ -60,12 +73,17 @@ const createProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, price, imageUrl, category, stock } = req.body;
+    const updateData = req.body;
+    
+    // Parse numeric fields
+    if (updateData.price) updateData.price = parseFloat(updateData.price);
+    if (updateData.stock) updateData.stock = parseInt(updateData.stock);
 
-    const product = await prisma.product.update({
-      where: { id: parseInt(id) },
-      data: { name, description, price, imageUrl, category, stock }
-    });
+    const product = await Product.update(id, updateData);
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
 
     res.json({ message: 'Product updated', product });
   } catch (error) {
@@ -79,9 +97,11 @@ const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
 
-    await prisma.product.delete({
-      where: { id: parseInt(id) }
-    });
+    const success = await Product.delete(id);
+
+    if (!success) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
 
     res.json({ message: 'Product deleted successfully' });
   } catch (error) {

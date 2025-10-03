@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const prisma = require('../utils/prisma');
+const User = require('../models/User');
 
 // Register new user
 const register = async (req, res) => {
@@ -8,7 +8,7 @@ const register = async (req, res) => {
     const { name, email, password, role } = req.body;
 
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    const existingUser = await User.findByEmail(email);
     if (existingUser) {
       return res.status(400).json({ error: 'User already exists' });
     }
@@ -17,13 +17,11 @@ const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        role: role || 'USER'
-      }
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      role: role || 'USER'
     });
 
     // Remove password from response
@@ -45,7 +43,7 @@ const login = async (req, res) => {
     const { email, password } = req.body;
 
     // Find user
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await User.findByEmail(email);
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -80,22 +78,16 @@ const login = async (req, res) => {
 // Get current user
 const getCurrentUser = async (req, res) => {
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true
-      }
-    });
+    const user = await User.findById(req.user.id);
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    res.json(user);
+    // Remove password from response
+    const { password: _, ...userWithoutPassword } = user;
+
+    res.json(userWithoutPassword);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Server error' });

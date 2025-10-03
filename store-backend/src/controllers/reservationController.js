@@ -1,4 +1,5 @@
-const prisma = require('../utils/prisma');
+const Reservation = require('../models/Reservation');
+const Product = require('../models/Product');
 
 // Create reservation
 const createReservation = async (req, res) => {
@@ -7,9 +8,7 @@ const createReservation = async (req, res) => {
     const userId = req.user.id;
 
     // Check if product exists and has enough stock
-    const product = await prisma.product.findUnique({
-      where: { id: parseInt(productId) }
-    });
+    const product = await Product.findById(productId);
 
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
@@ -20,25 +19,20 @@ const createReservation = async (req, res) => {
     }
 
     // Create reservation
-    const reservation = await prisma.reservation.create({
-      data: {
-        userId,
-        productId: parseInt(productId),
-        quantity,
-        status: 'pending'
-      },
-      include: {
-        product: true
-      }
+    const reservation = await Reservation.create({
+      userId,
+      productId,
+      quantity: parseInt(quantity),
+      status: 'pending'
     });
 
     // Update product stock
-    await prisma.product.update({
-      where: { id: parseInt(productId) },
-      data: { stock: product.stock - quantity }
-    });
+    await Product.updateStock(productId, -quantity);
 
-    res.status(201).json({ message: 'Reservation created', reservation });
+    // Get the complete reservation with product details
+    const completeReservation = await Reservation.findById(reservation.id);
+
+    res.status(201).json({ message: 'Reservation created', reservation: completeReservation });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Server error creating reservation' });
@@ -50,13 +44,7 @@ const getUserReservations = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const reservations = await prisma.reservation.findMany({
-      where: { userId },
-      include: {
-        product: true
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+    const reservations = await Reservation.findByUser(userId);
 
     res.json(reservations);
   } catch (error) {
@@ -68,15 +56,7 @@ const getUserReservations = async (req, res) => {
 // Get all reservations (Admin only)
 const getAllReservations = async (req, res) => {
   try {
-    const reservations = await prisma.reservation.findMany({
-      include: {
-        user: {
-          select: { id: true, name: true, email: true }
-        },
-        product: true
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+    const reservations = await Reservation.findAll();
 
     res.json(reservations);
   } catch (error) {
@@ -91,14 +71,11 @@ const updateReservationStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    const reservation = await prisma.reservation.update({
-      where: { id: parseInt(id) },
-      data: { status },
-      include: {
-        product: true,
-        user: true
-      }
-    });
+    const reservation = await Reservation.updateStatus(id, status);
+
+    if (!reservation) {
+      return res.status(404).json({ error: 'Reservation not found' });
+    }
 
     res.json({ message: 'Reservation updated', reservation });
   } catch (error) {
@@ -114,10 +91,7 @@ const deleteReservation = async (req, res) => {
     const userId = req.user.id;
     const isAdmin = req.user.role === 'ADMIN';
 
-    const reservation = await prisma.reservation.findUnique({
-      where: { id: parseInt(id) },
-      include: { product: true }
-    });
+    const reservation = await Reservation.findById(id);
 
     if (!reservation) {
       return res.status(404).json({ error: 'Reservation not found' });
@@ -129,14 +103,9 @@ const deleteReservation = async (req, res) => {
     }
 
     // Restore stock
-    await prisma.product.update({
-      where: { id: reservation.productId },
-      data: { stock: reservation.product.stock + reservation.quantity }
-    });
+    await Product.updateStock(reservation.productId, reservation.quantity);
 
-    await prisma.reservation.delete({
-      where: { id: parseInt(id) }
-    });
+    await Reservation.delete(id);
 
     res.json({ message: 'Reservation deleted successfully' });
   } catch (error) {
