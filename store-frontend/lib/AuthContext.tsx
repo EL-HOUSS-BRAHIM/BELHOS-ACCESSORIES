@@ -26,12 +26,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-    
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
+    // Only access localStorage on client side
+    if (typeof window !== 'undefined') {
+      const storedToken = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+      
+      if (storedToken && storedUser) {
+        setToken(storedToken);
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (error) {
+          console.error('Error parsing stored user:', error);
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+        }
+      }
     }
   }, []);
 
@@ -39,27 +48,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const response = await api.post('/auth/login', { email, password });
     const { token, user } = response.data;
     
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(user));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+    }
     setToken(token);
     setUser(user);
   };
 
   const register = async (name: string, email: string, password: string) => {
     const response = await api.post('/auth/register', { name, email, password });
-    const { token, user } = response.data;
+    const { user } = response.data;
     
-    if (token && user) {
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      setToken(token);
-      setUser(user);
-    }
+    // For registration, we might want to redirect to login or auto-login
+    // For now, just return the user data
+    return user;
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
     setToken(null);
     setUser(null);
   };
