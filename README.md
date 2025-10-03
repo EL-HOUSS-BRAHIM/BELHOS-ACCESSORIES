@@ -3,8 +3,8 @@
 A modern e-commerce platform for accessories built with Next.js, Node.js, and Firebase.
 
 ## 🚀 Live Demo
-- **Frontend**: [Deployed on Vercel](https://your-frontend-url.vercel.app)
-- **Backend API**: [Deployed on Vercel](https://your-backend-url.vercel.app)
+- **Frontend**: [https://store-frontend-b6ep7yp15-bross-projects-17a2e313.vercel.app](https://store-frontend-b6ep7yp15-bross-projects-17a2e313.vercel.app)
+- **Backend API**: [https://store-backend-cu36qfd27-bross-projects-17a2e313.vercel.app](https://store-backend-cu36qfd27-bross-projects-17a2e313.vercel.app)
 
 ## 🛠️ Tech Stack
 

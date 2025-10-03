@@ -7,6 +7,11 @@ package-lock.json
 .env.local
 .env.*.local
 
+# Production environment files (remove these lines if you want to commit them)
+# .env.production
+# store-frontend/.env.production  
+# store-backend/.env.production
+
 # Build outputs
 dist/
 build/

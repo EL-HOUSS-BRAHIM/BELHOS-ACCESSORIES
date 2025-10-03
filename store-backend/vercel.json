@@ -1,11 +1,9 @@
 {
   "version": 2,
+  "name": "belhos-accessories-backend",
   "functions": {
     "api/**/*.js": {
-      "runtime": "@vercel/node"
+      "runtime": "nodejs18.x"
     }
-  },
-  "env": {
-    "NODE_ENV": "production"
   }
 }
