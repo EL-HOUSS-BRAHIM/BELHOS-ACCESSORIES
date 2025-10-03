@@ -6,6 +6,8 @@ A modern e-commerce platform for accessories built with Next.js, Node.js, and Fi
 - **Frontend**: [https://store-frontend-b6ep7yp15-bross-projects-17a2e313.vercel.app](https://store-frontend-b6ep7yp15-bross-projects-17a2e313.vercel.app)
 - **Backend API**: [https://store-backend-cu36qfd27-bross-projects-17a2e313.vercel.app](https://store-backend-cu36qfd27-bross-projects-17a2e313.vercel.app)
 
+> 🔄 **Auto-Deployment Enabled**: Connected to GitHub for automatic updates on every push!
+
 ## 🛠️ Tech Stack
 
 ### Frontend
