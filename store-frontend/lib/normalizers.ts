@@ -95,7 +95,6 @@ export const parseProduct = (value: unknown): Product | null => {
   const price = parseNumber(value.price);
   const imageUrl = parseString(value.imageUrl);
   const stock = parseNumber(value.stock);
-  const isHot = parseBooleanFlag(value.isHot);
 
   if ((typeof id !== 'string' && typeof id !== 'number') || !name || !imageUrl || price === null || stock === null) {
     return null;
@@ -111,6 +110,8 @@ export const parseProduct = (value: unknown): Product | null => {
   const isNew = parseOptionalBoolean(value.isNew ?? value.new ?? value.isNewArrival ?? value.isNewProduct);
   const originalPrice = parseOptionalNumber(value.originalPrice ?? value.compareAtPrice ?? value.listPrice);
   const badges = parseOptionalStringArray(value.badges ?? value.tags ?? value.labels);
+  const badge = parseOptionalString(value.badge);
+  const salePrice = parseOptionalNumber(value.salePrice);
 
   return {
     id: String(id),
@@ -121,8 +122,8 @@ export const parseProduct = (value: unknown): Product | null => {
     category,
     stock: Math.max(0, Math.floor(stock)),
     isHot: isHot ?? false,
-    badge,
-    salePrice,
+    badge: badge ?? null,
+    salePrice: salePrice ?? null,
     createdAt,
     updatedAt,
     ...(highlighted !== undefined ? { highlighted } : {}),
