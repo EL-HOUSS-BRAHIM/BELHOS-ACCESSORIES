@@ -9,9 +9,11 @@ const createReservation = async (req, res) => {
 
     const parsedQuantity = Number(quantity);
 
-    if (!Number.isInteger(parsedQuantity) || parsedQuantity <= 0) {
-      return res.status(400).json({ error: 'Quantity must be a positive integer' });
+    if (!Number.isFinite(parsedQuantity) || !Number.isInteger(parsedQuantity) || parsedQuantity <= 0) {
+      return res.status(400).json({ error: 'Invalid quantity' });
     }
+
+    const normalizedQuantity = parsedQuantity;
 
     // Check if product exists and has enough stock
     const product = await Product.findById(productId);
@@ -20,9 +22,7 @@ const createReservation = async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    const availableStock = Number.isFinite(product.stock) ? product.stock : 0;
-
-    if (availableStock < parsedQuantity) {
+    if (product.stock < normalizedQuantity) {
       return res.status(400).json({ error: 'Insufficient stock' });
     }
 
@@ -30,12 +30,12 @@ const createReservation = async (req, res) => {
     const reservation = await Reservation.create({
       userId,
       productId,
-      quantity: parsedQuantity,
+      quantity: normalizedQuantity,
       status: 'pending'
     });
 
     // Update product stock
-    await Product.updateStock(productId, -parsedQuantity);
+    await Product.updateStock(productId, -normalizedQuantity);
 
     // Get the complete reservation with product details
     const completeReservation = await Reservation.findById(reservation.id);

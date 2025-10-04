@@ -12,6 +12,10 @@ const register = async (req, res) => {
       return res.status(400).json({ error: 'Name, email and password are required' });
     }
 
+    if (role && role !== 'USER') {
+      return res.status(400).json({ error: 'Role cannot be set during public registration' });
+    }
+
     // Check if user already exists
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
@@ -42,47 +46,34 @@ const register = async (req, res) => {
   }
 };
 
-const initAdminAccount = async (req, res) => {
+const assignRole = async (req, res) => {
   try {
-    const existingAdmin = await User.findFirstByRole('ADMIN');
+    const { userId, role } = req.body;
 
-    if (existingAdmin) {
-      return res.status(200).json({ message: 'Admin account already exists' });
+    if (!userId || !role) {
+      return res.status(400).json({ error: 'userId and role are required' });
     }
 
-    const baseEmail = process.env.DEFAULT_ADMIN_EMAIL || 'admin@belhos-accessories.local';
-    let adminEmail = baseEmail;
-
-    const existingUserWithEmail = await User.findByEmail(adminEmail);
-    if (existingUserWithEmail) {
-      const [localPart, domain = 'example.com'] = baseEmail.split('@');
-      adminEmail = `${localPart}+${Date.now()}@${domain}`;
+    const allowedRoles = ['USER', 'ADMIN'];
+    if (!allowedRoles.includes(role)) {
+      return res.status(400).json({ error: 'Invalid role specified' });
     }
 
-    const rawPassword = crypto.randomBytes(8).toString('hex');
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
 
-    const hashedPassword = await bcrypt.hash(rawPassword, 10);
+    const updatedUser = await User.update(userId, { role });
+    const { password: _, ...userWithoutPassword } = updatedUser;
 
-    const adminUser = await User.create({
-      name: 'Administrator',
-      email: adminEmail,
-      password: hashedPassword,
-      role: 'ADMIN'
-    });
-
-    const { password: _, ...adminWithoutPassword } = adminUser;
-
-    return res.status(201).json({
-      message: 'Admin account created successfully',
-      credentials: {
-        email: adminEmail,
-        password: rawPassword
-      },
-      user: adminWithoutPassword
+    res.json({
+      message: 'Role updated successfully',
+      user: userWithoutPassword
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: 'Server error initializing admin account' });
+    res.status(500).json({ error: 'Server error while assigning role' });
   }
 };
 
@@ -143,4 +134,4 @@ const getCurrentUser = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getCurrentUser, initAdminAccount };
+module.exports = { register, login, getCurrentUser, assignRole };
