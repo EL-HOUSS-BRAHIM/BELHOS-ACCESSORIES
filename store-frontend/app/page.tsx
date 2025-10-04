@@ -1,7 +1,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { HomeHeader, type HomeNavLink } from '@/components/HomeHeader';
+import { SiteFooter } from '@/components/SiteFooter';
 
-const navLinks = [
+const navLinks: HomeNavLink[] = [
   { href: '/', label: 'Accueil' },
   { href: '/boutique', label: 'Boutique' },
   { href: '/collections', label: 'Collections' },
@@ -107,41 +109,22 @@ const testimonials = [
 export default function Home() {
   return (
     <div className="min-h-screen bg-white text-black">
-      <header className="sticky top-0 z-50 border-b border-black/10 bg-white/90 backdrop-blur">
-        <nav className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-6 text-[0.7rem] uppercase tracking-[0.35em] sm:px-6 md:flex-row md:items-center md:justify-between">
-          <span className="text-sm font-semibold tracking-[0.45em]">Belhos Accessories</span>
-          <div className="flex flex-wrap justify-center gap-6 text-[0.65rem] font-medium md:text-xs">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="transition hover:text-black/60"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-          <Link
-            href="/reservations"
-            className="inline-flex items-center justify-center rounded-full border border-black px-5 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.35em] transition hover:bg-black hover:text-white"
-          >
-            Sur rendez-vous
-          </Link>
-        </nav>
-      </header>
+      <HomeHeader links={navLinks} />
 
-      <main className="mx-auto flex max-w-6xl flex-col gap-24 px-4 pb-24 pt-16 sm:px-6 lg:px-8">
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-16 px-4 pb-24 pt-20 sm:gap-20 sm:px-6 lg:gap-24 lg:px-8">
         <section className="grid gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
           <div className="space-y-8">
-            <span className="inline-flex items-center rounded-full bg-black px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-white">
+            <span className="inline-flex items-center rounded-full bg-black px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-white">
               Nouvelle Collection 2024
             </span>
-            <h1 className="text-4xl font-semibold tracking-[0.2em] sm:text-5xl">Intemporel & Lumineux</h1>
+            <h1 className="text-3xl font-semibold tracking-[0.15em] sm:text-4xl lg:text-5xl">
+              Intemporel & Lumineux
+            </h1>
             <p className="max-w-xl text-sm leading-relaxed text-black/70 sm:text-base">
               Des silhouettes sobres, sculptées dans des matières nobles, pensées pour souligner chaque instant de votre journée.
               Notre équipe sélectionne des pièces raffinées qui dialoguent avec la lumière et la texture.
             </p>
-            <div className="flex flex-wrap gap-4 text-[0.65rem] uppercase tracking-[0.35em]">
+            <div className="flex flex-wrap gap-4 text-[0.65rem] uppercase tracking-[0.25em]">
               <Link
                 href="/boutique"
                 className="inline-flex items-center justify-center rounded-full bg-black px-8 py-3 font-semibold text-white transition hover:bg-black/80"
@@ -157,17 +140,17 @@ export default function Home() {
             </div>
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
-                <p className="text-[0.65rem] uppercase tracking-[0.35em] text-black/60">Pièces sur mesure</p>
+                <p className="text-[0.65rem] uppercase tracking-[0.25em] text-black/60">Pièces sur mesure</p>
                 <p className="mt-3 text-xl font-semibold">48h</p>
                 <p className="mt-1 text-xs text-black/60">Délai de conception</p>
               </div>
               <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
-                <p className="text-[0.65rem] uppercase tracking-[0.35em] text-black/60">Ateliers privés</p>
+                <p className="text-[0.65rem] uppercase tracking-[0.25em] text-black/60">Ateliers privés</p>
                 <p className="mt-3 text-xl font-semibold">2 villes</p>
                 <p className="mt-1 text-xs text-black/60">Casablanca & Rabat</p>
               </div>
               <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
-                <p className="text-[0.65rem] uppercase tracking-[0.35em] text-black/60">Clients fidèles</p>
+                <p className="text-[0.65rem] uppercase tracking-[0.25em] text-black/60">Clients fidèles</p>
                 <p className="mt-3 text-xl font-semibold">8k+</p>
                 <p className="mt-1 text-xs text-black/60">Depuis 2012</p>
               </div>
@@ -175,8 +158,8 @@ export default function Home() {
           </div>
 
           <div className="space-y-6">
-            <div className="relative overflow-hidden rounded-[40px] border border-black/10 bg-white p-4 shadow-lg shadow-black/5">
-              <div className="relative h-80 w-full overflow-hidden rounded-[28px] sm:h-[22rem]">
+            <div className="relative overflow-hidden rounded-[32px] border border-black/10 bg-white p-4 shadow-lg shadow-black/5">
+              <div className="relative h-72 w-full overflow-hidden rounded-[24px] sm:h-[22rem]">
                 <Image
                   src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=1200&q=80"
                   alt="Montre et accessoires Belhos"
@@ -190,8 +173,8 @@ export default function Home() {
             <div className="grid gap-4 sm:grid-cols-2">
               {curatedCollections.slice(0, 2).map((collection) => (
                 <div key={collection.title} className="rounded-2xl border border-black/10 bg-white p-5 text-sm shadow-sm">
-                  <p className="text-[0.65rem] uppercase tracking-[0.35em] text-black/60">{collection.title}</p>
-                  <p className="mt-2 text-xs uppercase tracking-[0.3em] text-black/60">{collection.priceRange}</p>
+                  <p className="text-[0.65rem] uppercase tracking-[0.25em] text-black/60">{collection.title}</p>
+                  <p className="mt-2 text-xs uppercase tracking-[0.25em] text-black/60">{collection.priceRange}</p>
                 </div>
               ))}
             </div>
@@ -200,8 +183,8 @@ export default function Home() {
 
         <section id="collections" className="space-y-10">
           <div className="space-y-4 text-center">
-            <p className="text-[0.65rem] uppercase tracking-[0.35em] text-black/60">Collections signatures</p>
-            <h2 className="text-3xl font-semibold tracking-[0.2em]">Curations en édition limitée</h2>
+            <p className="text-[0.65rem] uppercase tracking-[0.25em] text-black/60">Collections signatures</p>
+            <h2 className="text-3xl font-semibold tracking-[0.15em]">Curations en édition limitée</h2>
             <p className="mx-auto max-w-3xl text-sm leading-relaxed text-black/70">
               L’essence de Belhos réside dans l’alliance entre savoir-faire marocain et allure contemporaine. Explorez une sélection de pièces destinées aux collectionneurs d’objets singuliers.
             </p>
@@ -223,13 +206,13 @@ export default function Home() {
                 </div>
                 <div className="flex flex-1 flex-col gap-4 p-8">
                   <div>
-                    <p className="text-[0.65rem] uppercase tracking-[0.35em] text-black/60">{collection.priceRange}</p>
-                    <h3 className="mt-3 text-xl font-semibold tracking-[0.2em]">{collection.title}</h3>
+                    <p className="text-[0.65rem] uppercase tracking-[0.25em] text-black/60">{collection.priceRange}</p>
+                    <h3 className="mt-3 text-xl font-semibold tracking-[0.15em]">{collection.title}</h3>
                   </div>
                   <p className="text-sm leading-relaxed text-black/70">{collection.description}</p>
                   <Link
                     href="/boutique"
-                    className="mt-auto inline-flex items-center text-[0.65rem] uppercase tracking-[0.35em] text-black transition hover:text-black/60"
+                    className="mt-auto inline-flex items-center text-[0.65rem] uppercase tracking-[0.25em] text-black transition hover:text-black/60"
                   >
                     Voir les détails
                   </Link>
@@ -239,10 +222,10 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="rounded-[36px] border border-black/10 bg-neutral-50 px-6 py-10 shadow-inner sm:px-10">
+        <section className="rounded-[32px] border border-black/10 bg-neutral-50 px-6 py-10 shadow-inner sm:px-10">
           <div className="space-y-4 text-center">
-            <p className="text-[0.65rem] uppercase tracking-[0.35em] text-black/60">Nouveautés</p>
-            <h2 className="text-3xl font-semibold tracking-[0.2em]">Sélection fraîchement arrivée</h2>
+            <p className="text-[0.65rem] uppercase tracking-[0.25em] text-black/60">Nouveautés</p>
+            <h2 className="text-3xl font-semibold tracking-[0.15em]">Sélection fraîchement arrivée</h2>
           </div>
           <div className="mt-10 grid gap-8 sm:grid-cols-2 xl:grid-cols-4">
             {newArrivals.map((item) => (
@@ -260,8 +243,8 @@ export default function Home() {
                   />
                 </div>
                 <div className="flex flex-1 flex-col gap-3 p-6">
-                  <p className="text-[0.65rem] uppercase tracking-[0.35em] text-black/60">{item.materials}</p>
-                  <h3 className="text-lg font-semibold tracking-[0.2em]">{item.name}</h3>
+                  <p className="text-[0.65rem] uppercase tracking-[0.25em] text-black/60">{item.materials}</p>
+                  <h3 className="text-lg font-semibold tracking-[0.15em]">{item.name}</h3>
                   <span className="mt-auto text-sm font-semibold">{item.price}</span>
                 </div>
               </div>
@@ -271,8 +254,8 @@ export default function Home() {
 
         <section className="grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
           <div className="space-y-8">
-            <p className="text-[0.65rem] uppercase tracking-[0.35em] text-black/60">Carnet Belhos</p>
-            <h2 className="text-3xl font-semibold tracking-[0.2em]">Histoires et inspirations</h2>
+            <p className="text-[0.65rem] uppercase tracking-[0.25em] text-black/60">Carnet Belhos</p>
+            <h2 className="text-3xl font-semibold tracking-[0.15em]">Histoires et inspirations</h2>
             <p className="max-w-2xl text-sm leading-relaxed text-black/70">
               Découvrez l’univers de nos artisans et les secrets de fabrication de vos pièces favorites. Reportages, conseils de style et rencontres exclusives rythment notre journal.
             </p>
@@ -292,11 +275,11 @@ export default function Home() {
                     />
                   </div>
                   <div className="space-y-3 p-6">
-                    <h3 className="text-lg font-semibold tracking-[0.2em]">{story.title}</h3>
+                    <h3 className="text-lg font-semibold tracking-[0.15em]">{story.title}</h3>
                     <p className="text-sm leading-relaxed text-black/70">{story.excerpt}</p>
                     <Link
                       href="/articles"
-                      className="inline-flex items-center text-[0.65rem] uppercase tracking-[0.35em] text-black transition hover:text-black/60"
+                      className="inline-flex items-center text-[0.65rem] uppercase tracking-[0.25em] text-black transition hover:text-black/60"
                     >
                       Lire l’article
                     </Link>
@@ -308,14 +291,14 @@ export default function Home() {
 
           <div className="space-y-8 rounded-[32px] border border-black/10 bg-neutral-50 p-8 shadow-inner">
             <div className="space-y-4 text-center">
-              <p className="text-[0.65rem] uppercase tracking-[0.35em] text-black/60">Avis clients</p>
-              <h3 className="text-2xl font-semibold tracking-[0.2em]">Ils nous font confiance</h3>
+              <p className="text-[0.65rem] uppercase tracking-[0.25em] text-black/60">Avis clients</p>
+              <h3 className="text-2xl font-semibold tracking-[0.15em]">Ils nous font confiance</h3>
             </div>
             <div className="space-y-6">
               {testimonials.map((testimonial) => (
                 <figure key={testimonial.name} className="space-y-3 rounded-2xl border border-black/10 bg-white px-6 py-5 shadow-sm">
                   <blockquote className="text-sm leading-relaxed text-black/70">“{testimonial.quote}”</blockquote>
-                  <figcaption className="text-[0.65rem] uppercase tracking-[0.35em] text-black/60">
+                  <figcaption className="text-[0.65rem] uppercase tracking-[0.25em] text-black/60">
                     {testimonial.name} · {testimonial.title}
                   </figcaption>
                 </figure>
@@ -323,21 +306,21 @@ export default function Home() {
             </div>
             <Link
               href="/contact"
-              className="inline-flex w-full items-center justify-center rounded-full border border-black px-8 py-3 text-[0.65rem] font-semibold uppercase tracking-[0.35em] transition hover:bg-black hover:text-white"
+              className="inline-flex w-full items-center justify-center rounded-full border border-black px-8 py-3 text-[0.65rem] font-semibold uppercase tracking-[0.25em] transition hover:bg-black hover:text-white"
             >
               Prendre contact
             </Link>
           </div>
         </section>
 
-        <section className="rounded-[40px] border border-black/10 bg-black px-6 py-12 text-center text-white shadow-lg shadow-black/10 sm:px-12">
+        <section className="rounded-[32px] border border-black/10 bg-black px-6 py-12 text-center text-white shadow-lg shadow-black/10 sm:px-12">
           <div className="space-y-6">
-            <p className="text-[0.65rem] uppercase tracking-[0.35em] text-white/70">Invitation privée</p>
-            <h2 className="text-3xl font-semibold tracking-[0.2em]">Visitez notre showroom</h2>
+            <p className="text-[0.65rem] uppercase tracking-[0.25em] text-white/70">Invitation privée</p>
+            <h2 className="text-3xl font-semibold tracking-[0.15em]">Visitez notre showroom</h2>
             <p className="mx-auto max-w-3xl text-sm leading-relaxed text-white/80">
               Nos conseillers vous accueillent sur rendez-vous pour créer la pièce qui racontera votre histoire. Un rituel personnalisé autour d’une sélection d’accessoires exclusifs et de matériaux nobles.
             </p>
-            <div className="flex flex-wrap justify-center gap-4 text-[0.65rem] uppercase tracking-[0.35em]">
+            <div className="flex flex-wrap justify-center gap-4 text-[0.65rem] uppercase tracking-[0.25em]">
               <Link
                 href="/reservations"
                 className="inline-flex items-center justify-center rounded-full bg-white px-8 py-3 font-semibold text-black transition hover:bg-white/80"
@@ -354,6 +337,8 @@ export default function Home() {
           </div>
         </section>
       </main>
+
+      <SiteFooter />
     </div>
   );
 }
