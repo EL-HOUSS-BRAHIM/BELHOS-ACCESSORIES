@@ -87,21 +87,35 @@ class Product {
   }
 
   static async updateStock(id, stockChange) {
+    if (typeof stockChange !== 'number' || !Number.isFinite(stockChange) || !Number.isInteger(stockChange)) {
+      throw new Error('Invalid stock change value');
+    }
+
     try {
       const productRef = db.collection('products').doc(id);
       const product = await productRef.get();
-      
+
       if (!product.exists) {
         throw new Error('Product not found');
       }
-      
-      const currentStock = product.data().stock || 0;
+
+      const rawStock = product.data().stock;
+      const currentStock = rawStock === undefined ? 0 : rawStock;
+
+      if (typeof currentStock !== 'number' || !Number.isFinite(currentStock) || !Number.isInteger(currentStock)) {
+        throw new Error('Invalid product stock value');
+      }
+
       const newStock = currentStock + stockChange;
-      
+
       if (newStock < 0) {
         throw new Error('Insufficient stock');
       }
-      
+
+      if (!Number.isInteger(newStock)) {
+        throw new Error('Invalid resulting stock value');
+      }
+
       await productRef.update({
         stock: newStock,
         updatedAt: new Date()
