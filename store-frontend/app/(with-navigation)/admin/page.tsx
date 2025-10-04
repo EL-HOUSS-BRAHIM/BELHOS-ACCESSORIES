@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 import api, { getJson } from '@/lib/api';
 import type { Product, Reservation } from '@/lib/types';
 import { parseProductList, parseReservationList } from '@/lib/normalizers';
+import { useDataSource } from '@/lib/DataSourceContext';
+import { mockProducts, mockReservations } from '@/lib/mockData';
 
 const truncateText = (text: string, maxLength = 120) => {
   if (!text) return '';
@@ -14,7 +16,7 @@ const truncateText = (text: string, maxLength = 120) => {
 };
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState<'products' | 'reservations'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'reservations' | 'settings'>('products');
   const [products, setProducts] = useState<Product[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,14 +33,29 @@ export default function AdminPage() {
 
   const { isAdmin, isHydrated } = useAuth();
   const router = useRouter();
+  const { mode, setMode, isReady: isDataSourceReady } = useDataSource();
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [rawProducts, rawReservations] = await Promise.all([
-        getJson('/products'),
-        getJson('/reservations'),
-      ]);
+      console.debug('[Admin] Fetching dashboard data', { mode });
+
+      let rawProducts: unknown;
+      let rawReservations: unknown;
+
+      if (mode === 'mock') {
+        rawProducts = mockProducts;
+        rawReservations = mockReservations;
+        console.debug('[Admin] Using mock data for dashboard', {
+          products: mockProducts.length,
+          reservations: mockReservations.length,
+        });
+      } else {
+        [rawProducts, rawReservations] = await Promise.all([
+          getJson('/products'),
+          getJson('/reservations'),
+        ]);
+      }
       if (!Array.isArray(rawProducts)) {
         console.warn('Unexpected products response payload', rawProducts);
       }
@@ -69,10 +86,10 @@ export default function AdminPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
-    if (!isHydrated) {
+    if (!isHydrated || !isDataSourceReady) {
       return;
     }
 
@@ -82,18 +99,37 @@ export default function AdminPage() {
     }
 
     fetchData();
-  }, [fetchData, isAdmin, isHydrated, router]);
+  }, [fetchData, isAdmin, isHydrated, isDataSourceReady, router]);
 
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post('/products', {
-        ...formData,
-        price: parseFloat(formData.price),
-        stock: parseInt(formData.stock),
-      });
+      console.debug('[Admin] Creating product', { mode, formData });
+      if (mode === 'mock') {
+        const price = Number.parseFloat(formData.price);
+        const stock = Number.parseInt(formData.stock, 10);
+        const newProduct: Product = {
+          id: `mock-prod-${Date.now()}`,
+          name: formData.name,
+          description: formData.description || undefined,
+          price: Number.isNaN(price) ? 0 : price,
+          imageUrl: formData.imageUrl,
+          category: formData.category || undefined,
+          stock: Number.isNaN(stock) ? 0 : stock,
+          createdAt: new Date().toISOString(),
+        };
+        setProducts((prev) => [newProduct, ...prev]);
+      } else {
+        await api.post('/products', {
+          ...formData,
+          price: parseFloat(formData.price),
+          stock: parseInt(formData.stock),
+        });
+      }
       resetForm();
-      fetchData();
+      if (mode !== 'mock') {
+        fetchData();
+      }
     } catch (error) {
       console.error('Error creating product:', error);
     }
@@ -104,13 +140,37 @@ export default function AdminPage() {
     if (!editingProduct) return;
 
     try {
-      await api.put(`/products/${editingProduct.id}`, {
-        ...formData,
-        price: parseFloat(formData.price),
-        stock: parseInt(formData.stock),
-      });
+      console.debug('[Admin] Updating product', { mode, productId: editingProduct.id });
+      if (mode === 'mock') {
+        const price = Number.parseFloat(formData.price);
+        const stock = Number.parseInt(formData.stock, 10);
+        setProducts((prev) =>
+          prev.map((product) =>
+            product.id === editingProduct.id
+              ? {
+                  ...product,
+                  name: formData.name,
+                  description: formData.description || undefined,
+                  price: Number.isNaN(price) ? product.price : price,
+                  imageUrl: formData.imageUrl,
+                  category: formData.category || undefined,
+                  stock: Number.isNaN(stock) ? product.stock : stock,
+                  updatedAt: new Date().toISOString(),
+                }
+              : product,
+          ),
+        );
+      } else {
+        await api.put(`/products/${editingProduct.id}`, {
+          ...formData,
+          price: parseFloat(formData.price),
+          stock: parseInt(formData.stock),
+        });
+      }
       resetForm();
-      fetchData();
+      if (mode !== 'mock') {
+        fetchData();
+      }
     } catch (error) {
       console.error('Error updating product:', error);
     }
@@ -120,8 +180,15 @@ export default function AdminPage() {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce produit?')) return;
 
     try {
-      await api.delete(`/products/${id}`);
-      fetchData();
+      console.debug('[Admin] Deleting product', { mode, productId: id });
+      if (mode === 'mock') {
+        setProducts((prev) => prev.filter((product) => product.id !== id));
+      } else {
+        await api.delete(`/products/${id}`);
+      }
+      if (mode !== 'mock') {
+        fetchData();
+      }
     } catch (error) {
       console.error('Error deleting product:', error);
     }
@@ -129,8 +196,24 @@ export default function AdminPage() {
 
   const handleUpdateReservationStatus = async (id: string, status: string) => {
     try {
-      await api.put(`/reservations/${id}`, { status });
-      fetchData();
+      console.debug('[Admin] Updating reservation', { mode, reservationId: id, status });
+      if (mode === 'mock') {
+        setReservations((prev) =>
+          prev.map((reservation) =>
+            reservation.id === id
+              ? {
+                  ...reservation,
+                  status,
+                }
+              : reservation,
+          ),
+        );
+      } else {
+        await api.put(`/reservations/${id}`, { status });
+      }
+      if (mode !== 'mock') {
+        fetchData();
+      }
     } catch (error) {
       console.error('Error updating reservation:', error);
     }
@@ -240,6 +323,16 @@ export default function AdminPage() {
           }`}
         >
           Réservations ({reservations.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('settings')}
+          className={`px-6 py-3 font-bold rounded-lg transition ${
+            activeTab === 'settings'
+              ? 'bg-blue-500 text-white'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          Paramètres
         </button>
       </div>
 
@@ -514,6 +607,58 @@ export default function AdminPage() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {activeTab === 'settings' && (
+        <div className="max-w-2xl space-y-6">
+          <div className="rounded-3xl border border-black/10 bg-white p-8 shadow-sm">
+            <h2 className="mb-3 text-2xl font-semibold tracking-[0.2em]">
+              Paramètres du site
+            </h2>
+            <p className="mb-6 text-sm text-black/60">
+              Choisissez la source de données utilisée pour la boutique et les réservations. Utilisez le mode maquette pour des
+              démonstrations hors ligne ou revenez à l&apos;API pour travailler avec les données réelles.
+            </p>
+
+            <div className="space-y-4">
+              <label className="flex items-center gap-3 rounded-2xl border border-black/10 p-4">
+                <input
+                  type="radio"
+                  name="data-source-mode"
+                  value="api"
+                  checked={mode === 'api'}
+                  onChange={() => setMode('api')}
+                />
+                <div>
+                  <p className="font-semibold">API en direct</p>
+                  <p className="text-sm text-black/60">
+                    Les pages consomment les données du serveur et enregistrent les modifications réelles.
+                  </p>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-3 rounded-2xl border border-black/10 p-4">
+                <input
+                  type="radio"
+                  name="data-source-mode"
+                  value="mock"
+                  checked={mode === 'mock'}
+                  onChange={() => setMode('mock')}
+                />
+                <div>
+                  <p className="font-semibold">Données simulées</p>
+                  <p className="text-sm text-black/60">
+                    Les pages chargent un ensemble de données fictives. Les actions restent locales sans toucher au serveur.
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+              Mode actuel : <strong>{mode === 'mock' ? 'Données simulées' : 'API en direct'}</strong>
+            </div>
+          </div>
         </div>
       )}
     </div>

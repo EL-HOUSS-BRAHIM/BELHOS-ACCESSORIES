@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useAuth } from '@/lib/AuthContext';
 import Link from 'next/link';
 import { StorefrontLayout } from './StorefrontLayout';
 import type { Product } from '@/lib/types';
 import { parseProductList } from '@/lib/normalizers';
+import { useDataSource } from '@/lib/DataSourceContext';
+import { mockProducts } from '@/lib/mockData';
 
 export function BoutiqueCatalogue() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -16,17 +18,32 @@ export function BoutiqueCatalogue() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const { user } = useAuth();
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+  const { mode, isReady } = useDataSource();
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
+      console.debug('[BoutiqueCatalogue] Fetching products', { mode });
+
+      if (mode === 'mock') {
+        setProducts(parseProductList(mockProducts));
+        console.debug('[BoutiqueCatalogue] Loaded products from mock data', {
+          count: mockProducts.length,
+        });
+        return;
+      }
+
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiUrl}/products`);
+      const requestUrl = `${apiUrl}/products`;
+      console.debug('[BoutiqueCatalogue] Requesting products from API', { url: requestUrl });
+      const response = await fetch(requestUrl);
+
+      console.debug('[BoutiqueCatalogue] API response received', {
+        url: requestUrl,
+        status: response.status,
+      });
 
       if (!response.ok) {
         throw new Error(`Failed to fetch products: ${response.status}`);
@@ -42,7 +59,14 @@ export function BoutiqueCatalogue() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [mode]);
+
+  useEffect(() => {
+    if (!isReady) {
+      return;
+    }
+    fetchProducts();
+  }, [fetchProducts, isReady]);
 
   const categories = [
     'all',

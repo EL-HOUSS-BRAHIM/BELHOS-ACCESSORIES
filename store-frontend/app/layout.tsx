@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/AuthContext";
+import { DataSourceProvider } from "@/lib/DataSourceContext";
 
 export const metadata: Metadata = {
   title: "BELHOS Accessories - Boutique en ligne",
@@ -16,7 +17,9 @@ export default function RootLayout({
     <html lang="fr">
       <body className="antialiased">
         <AuthProvider>
-          <main className="min-h-screen">{children}</main>
+          <DataSourceProvider>
+            <main className="min-h-screen">{children}</main>
+          </DataSourceProvider>
         </AuthProvider>
       </body>
     </html>

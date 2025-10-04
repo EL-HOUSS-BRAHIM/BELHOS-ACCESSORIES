@@ -90,23 +90,28 @@ class Product {
     try {
       const productRef = db.collection('products').doc(id);
       const product = await productRef.get();
-      
+
       if (!product.exists) {
         throw new Error('Product not found');
       }
-      
-      const currentStock = product.data().stock || 0;
+
+      if (!Number.isFinite(stockChange) || !Number.isInteger(stockChange)) {
+        throw new Error('Invalid stock change value');
+      }
+
+      const currentStockRaw = product.data().stock;
+      const currentStock = Number.isFinite(currentStockRaw) ? currentStockRaw : 0;
       const newStock = currentStock + stockChange;
-      
+
       if (newStock < 0) {
         throw new Error('Insufficient stock');
       }
-      
+
       await productRef.update({
-        stock: newStock,
+        stock: Math.trunc(newStock),
         updatedAt: new Date()
       });
-      
+
       return await this.findById(id);
     } catch (error) {
       throw new Error(`Error updating stock: ${error.message}`);
