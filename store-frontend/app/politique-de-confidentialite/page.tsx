@@ -1,4 +1,4 @@
-import StorefrontLayout from '@/components/StorefrontLayout';
+import { StorefrontLayout } from '@/components/StorefrontLayout';
 
 export default function PolitiqueConfidentialitePage() {
   return (
