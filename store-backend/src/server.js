@@ -10,10 +10,56 @@ const reservationRoutes = require('./routes/reservationRoutes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+const defaultOrigins = ['http://localhost:3000'];
+const envOrigins = [
+  process.env.FRONTEND_URL,
+  process.env.FRONTEND_URLS,
+  process.env.NEXT_PUBLIC_SITE_URL,
+  process.env.NEXT_PUBLIC_FRONTEND_URL,
+]
+  .filter(Boolean)
+  .flatMap((value) => value.split(',').map((origin) => origin.trim()))
+  .filter((origin) => origin.length > 0);
+
+const vercelOrigin = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null;
+
+const allowedOrigins = Array.from(
+  new Set([
+    ...defaultOrigins,
+    ...envOrigins,
+    vercelOrigin,
+  ].filter(Boolean)),
+);
+
+const isOriginAllowed = (origin) =>
+  allowedOrigins.some((allowedOrigin) => {
+    if (allowedOrigin === '*') {
+      return true;
+    }
+
+    if (allowedOrigin.includes('*')) {
+      const [prefix, suffix] = allowedOrigin.split('*');
+      return origin.startsWith(prefix) && origin.endsWith(suffix);
+    }
+
+    return allowedOrigin === origin;
+  });
+
 // Middleware
 app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true
+  origin: (origin, callback) => {
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (isOriginAllowed(origin)) {
+      return callback(null, true);
+    }
+
+    console.warn(`Blocked CORS origin: ${origin}`);
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
 }));
 app.use(express.json());
 app.use(cookieParser());

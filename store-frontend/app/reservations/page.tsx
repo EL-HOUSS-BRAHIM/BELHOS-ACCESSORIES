@@ -7,30 +7,8 @@ import { useAuth } from '@/lib/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { StorefrontLayout } from '@/components/StorefrontLayout';
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  imageUrl: string;
-  stock: number;
-}
-
-interface Reservation {
-  id: string;
-  quantity: number;
-  status: string;
-  createdAt: string;
-  product: Product;
-}
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null;
-
-const hasId = (
-  value: Record<string, unknown>,
-): value is Record<string, unknown> & { id: string | number } =>
-  typeof value.id === 'string' || typeof value.id === 'number';
+import type { Product, Reservation } from '@/lib/types';
+import { parseProductList, parseReservationList } from '@/lib/normalizers';
 
 const statusLabels: Record<string, string> = {
   pending: 'En attente',
@@ -72,43 +50,9 @@ function ReservationsContent() {
         api.get('/products'),
         api.get('/reservations/my-reservations'),
       ]);
-      const normalizedProducts = Array.isArray(productsRes.data)
-        ? productsRes.data
-            .filter(isRecord)
-            .filter(hasId)
-            .map(
-              (product) =>
-                ({
-                  ...(product as Omit<Product, 'id'>),
-                  id: String(product.id),
-                }) as Product,
-            )
-        : [];
+      const normalizedProducts = parseProductList(productsRes.data);
 
-      const normalizedReservations = Array.isArray(reservationsRes.data)
-        ? reservationsRes.data
-            .filter(isRecord)
-            .filter((reservation): reservation is Record<string, unknown> & {
-              product: Record<string, unknown> & { id: string | number };
-            } => {
-              if (!hasId(reservation)) return false;
-              if (!isRecord(reservation.product)) return false;
-              return hasId(reservation.product);
-            })
-            .map(
-              (reservation) =>
-                ({
-                  ...(reservation as Omit<Reservation, 'id' | 'product'> & {
-                    product: Omit<Product, 'id'>;
-                  }),
-                  id: String(reservation.id),
-                  product: {
-                    ...(reservation.product as Omit<Product, 'id'>),
-                    id: String(reservation.product.id),
-                  },
-                }) as Reservation,
-            )
-        : [];
+      const normalizedReservations = parseReservationList(reservationsRes.data);
 
       setProducts(normalizedProducts);
       setReservations(normalizedReservations);
@@ -164,9 +108,7 @@ function ReservationsContent() {
     }
   };
 
-  const getSelectedProductDetails = () => {
-    return products.find((p) => p.id === selectedProduct);
-  };
+  const selectedProductDetails = products.find((product) => product.id === selectedProduct);
 
   if (loading) {
     return (
@@ -255,7 +197,7 @@ function ReservationsContent() {
                   <input
                     type="number"
                     min="1"
-                    max={getSelectedProductDetails()?.stock || 1}
+                    max={selectedProductDetails?.stock || 1}
                     value={quantity}
                     onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
                     className="w-full rounded-full border border-black/20 bg-white px-6 py-3 text-sm focus:border-black focus:outline-none"
@@ -265,26 +207,26 @@ function ReservationsContent() {
               </div>
 
               {/* Product Preview */}
-              {selectedProduct && getSelectedProductDetails() && (
+              {selectedProduct && selectedProductDetails && (
                 <div className="rounded-2xl border border-black/10 bg-gray-50 p-6">
                   <div className="flex items-center gap-4">
                     <div className="relative h-20 w-20 overflow-hidden rounded-2xl">
                       <Image
-                        src={getSelectedProductDetails()!.imageUrl}
-                        alt={getSelectedProductDetails()!.name}
+                        src={selectedProductDetails.imageUrl}
+                        alt={selectedProductDetails.name}
                         fill
                         className="object-cover"
                       />
                     </div>
                     <div className="flex-1">
                       <h3 className="mb-1 font-semibold tracking-[0.15em]">
-                        {getSelectedProductDetails()!.name}
+                        {selectedProductDetails.name}
                       </h3>
                       <p className="text-sm text-black/60">
-                        Prix unitaire: {getSelectedProductDetails()!.price.toFixed(2)} MAD
+                        Prix unitaire: {selectedProductDetails.price.toFixed(2)} MAD
                       </p>
                       <p className="text-sm font-semibold">
-                        Total: {(getSelectedProductDetails()!.price * quantity).toFixed(2)} MAD
+                        Total: {(selectedProductDetails.price * quantity).toFixed(2)} MAD
                       </p>
                     </div>
                   </div>
