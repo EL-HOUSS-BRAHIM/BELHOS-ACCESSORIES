@@ -6,16 +6,8 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
 import { API_URL } from '@/lib/api';
 import { StorefrontLayout } from '@/components/StorefrontLayout';
-
-interface Product {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  imageUrl: string;
-  category: string;
-  stock: number;
-}
+import type { Product } from '@/lib/types';
+import { parseProductList } from '@/lib/normalizers';
 
 export default function BoutiquePage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -41,7 +33,7 @@ export default function BoutiquePage() {
       }
       
       const data = await response.json();
-      setProducts(data);
+      setProducts(parseProductList(data));
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load products';
       setError(errorMessage);
@@ -52,7 +44,16 @@ export default function BoutiquePage() {
   };
 
   // Get unique categories
-  const categories = ['all', ...Array.from(new Set(products.map(p => p.category).filter(Boolean)))];
+  const categories = [
+    'all',
+    ...Array.from(
+      new Set(
+        products
+          .map((product) => product.category)
+          .filter((category): category is string => typeof category === 'string' && category.trim().length > 0),
+      ),
+    ),
+  ];
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(filter.toLowerCase()) ||

@@ -5,105 +5,12 @@ import Image from 'next/image';
 import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import api, { getJson } from '@/lib/api';
-
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  imageUrl: string;
-  category: string;
-  stock: number;
-  createdAt: string;
-  updatedAt?: string;
-}
-
-interface Reservation {
-  id: string;
-  quantity: number;
-  status: string;
-  createdAt: string;
-  user: {
-    id: string;
-    name: string;
-    email: string;
-  };
-  product: {
-    id: string;
-    name: string;
-    price: number;
-  };
-}
+import type { Product, Reservation } from '@/lib/types';
+import { parseProductList, parseReservationList } from '@/lib/normalizers';
 
 const truncateText = (text: string, maxLength = 120) => {
   if (!text) return '';
   return text.length > maxLength ? `${text.slice(0, maxLength)}…` : text;
-};
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null;
-
-const ensureStringId = (record: Record<string, unknown>, key: string) => {
-  const rawId = record[key];
-
-  if (typeof rawId === 'string') {
-    return rawId;
-  }
-
-  if (typeof rawId === 'number') {
-    const normalized = rawId.toString();
-    record[key] = normalized;
-    return normalized;
-  }
-
-  return null;
-};
-
-const isProduct = (value: unknown): value is Product => {
-  if (!isRecord(value)) return false;
-
-  if (!ensureStringId(value, 'id')) {
-    return false;
-  }
-
-  return (
-    typeof value.name === 'string' &&
-    typeof value.price === 'number' &&
-    typeof value.stock === 'number' &&
-    typeof value.createdAt === 'string' &&
-    typeof value.imageUrl === 'string'
-  );
-};
-
-const isReservation = (value: unknown): value is Reservation => {
-  if (!isRecord(value)) return false;
-
-  if (!ensureStringId(value, 'id')) {
-    return false;
-  }
-
-  const { user, product } = value as {
-    user?: unknown;
-    product?: unknown;
-  };
-
-  if (!isRecord(user) || !isRecord(product)) {
-    return false;
-  }
-
-  if (!ensureStringId(user, 'id') || !ensureStringId(product, 'id')) {
-    return false;
-  }
-
-  return (
-    typeof value.quantity === 'number' &&
-    typeof value.status === 'string' &&
-    typeof value.createdAt === 'string' &&
-    typeof user.name === 'string' &&
-    typeof user.email === 'string' &&
-    typeof product.name === 'string' &&
-    typeof product.price === 'number'
-  );
 };
 
 export default function AdminPage() {
@@ -139,15 +46,21 @@ export default function AdminPage() {
         console.warn('Unexpected reservations response payload', rawReservations);
       }
 
-      const productsData = Array.isArray(rawProducts)
-        ? rawProducts.filter(isProduct)
-        : [];
-      const reservationsData = Array.isArray(rawReservations)
-        ? rawReservations.filter(isReservation)
-        : [];
+      const productsData = parseProductList(rawProducts);
+      const reservationsData = parseReservationList(rawReservations);
+
+      const toTimestamp = (value?: string) => {
+        if (!value) {
+          return 0;
+        }
+
+        const date = new Date(value);
+        const time = date.getTime();
+        return Number.isNaN(time) ? 0 : time;
+      };
 
       const sortedProducts = [...productsData].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        (a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt),
       );
       setProducts(sortedProducts);
       setReservations(reservationsData);
@@ -236,7 +149,11 @@ export default function AdminPage() {
     setShowProductForm(false);
   };
 
-  const formatProductDate = (dateString: string) => {
+  const formatProductDate = (dateString?: string) => {
+    if (!dateString) {
+      return 'Date inconnue';
+    }
+
     const date = new Date(dateString);
     if (Number.isNaN(date.getTime())) {
       return 'Date inconnue';
@@ -248,7 +165,11 @@ export default function AdminPage() {
     });
   };
 
-  const isProductNew = (dateString: string) => {
+  const isProductNew = (dateString?: string) => {
+    if (!dateString) {
+      return false;
+    }
+
     const date = new Date(dateString);
     if (Number.isNaN(date.getTime())) {
       return false;
@@ -545,13 +466,17 @@ export default function AdminPage() {
               </tr>
             </thead>
             <tbody>
-              {reservations.map((reservation) => (
+              {reservations.map((reservation) => {
+                const customerName = reservation.user?.name ?? 'Client inconnu';
+                const customerEmail = reservation.user?.email ?? 'Email indisponible';
+
+                return (
                 <tr key={reservation.id} className="border-b hover:bg-gray-50">
                   <td className="px-4 py-3">{reservation.id}</td>
                   <td className="px-4 py-3">
-                    {reservation.user.name}
+                    {customerName}
                     <br />
-                    <span className="text-sm text-gray-500">{reservation.user.email}</span>
+                    <span className="text-sm text-gray-500">{customerEmail}</span>
                   </td>
                   <td className="px-4 py-3">{reservation.product.name}</td>
                   <td className="px-4 py-3">{reservation.quantity}</td>
@@ -585,7 +510,8 @@ export default function AdminPage() {
                     </select>
                   </td>
                 </tr>
-              ))}
+              );
+              })}
             </tbody>
           </table>
         </div>

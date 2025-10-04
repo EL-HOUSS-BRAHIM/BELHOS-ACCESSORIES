@@ -5,24 +5,8 @@ import Image from 'next/image';
 import { useAuth } from '@/lib/AuthContext';
 import Link from 'next/link';
 import { StorefrontLayout } from './StorefrontLayout';
-
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  imageUrl: string;
-  category: string;
-  stock: number;
-}
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null;
-
-const hasId = (
-  value: Record<string, unknown>,
-): value is Record<string, unknown> & { id: string | number } =>
-  typeof value.id === 'string' || typeof value.id === 'number';
+import type { Product } from '@/lib/types';
+import { parseProductList } from '@/lib/normalizers';
 
 export function BoutiqueCatalogue() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -49,18 +33,7 @@ export function BoutiqueCatalogue() {
       }
 
       const data = await response.json();
-      const normalizedProducts = Array.isArray(data)
-        ? data
-            .filter(isRecord)
-            .filter(hasId)
-            .map(
-              (product) =>
-                ({
-                  ...(product as Omit<Product, 'id'>),
-                  id: String(product.id),
-                }) as Product,
-            )
-        : [];
+      const normalizedProducts = parseProductList(data);
       setProducts(normalizedProducts);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load products';
@@ -71,7 +44,16 @@ export function BoutiqueCatalogue() {
     }
   };
 
-  const categories = ['all', ...Array.from(new Set(products.map((p) => p.category).filter(Boolean)))];
+  const categories = [
+    'all',
+    ...Array.from(
+      new Set(
+        products
+          .map((product) => product.category)
+          .filter((category): category is string => typeof category === 'string' && category.trim().length > 0),
+      ),
+    ),
+  ];
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch =
