@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -122,18 +122,11 @@ export default function AdminPage() {
     stock: '',
   });
 
-  const { user, isAdmin } = useAuth();
+  const { isAdmin, isHydrated } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!user || !isAdmin) {
-      router.push('/');
-      return;
-    }
-    fetchData();
-  }, [user, isAdmin, router]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    setLoading(true);
     try {
       const [rawProducts, rawReservations] = await Promise.all([
         getJson('/products'),
@@ -163,7 +156,20 @@ export default function AdminPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!isHydrated) {
+      return;
+    }
+
+    if (!isAdmin) {
+      router.push('/');
+      return;
+    }
+
+    fetchData();
+  }, [fetchData, isAdmin, isHydrated, router]);
 
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -263,6 +269,22 @@ export default function AdminPage() {
     });
     setShowProductForm(true);
   };
+
+  if (!isHydrated) {
+    return (
+      <div className="container mx-auto px-4 py-16 text-center">
+        <p className="text-xl">Vérification de l&apos;authentification…</p>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="container mx-auto px-4 py-16 text-center">
+        <p className="text-xl">Redirection…</p>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
