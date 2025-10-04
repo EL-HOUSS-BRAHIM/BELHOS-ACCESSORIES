@@ -308,29 +308,58 @@ export default function AdminPage() {
                 </tr>
               </thead>
               <tbody>
-                {products.map((product) => (
-                  <tr key={product.id} className="border-b hover:bg-gray-50">
-                    <td className="px-4 py-3">{product.id}</td>
-                    <td className="px-4 py-3">{product.name}</td>
-                    <td className="px-4 py-3">{product.category}</td>
-                    <td className="px-4 py-3">{product.price.toFixed(2)} €</td>
-                    <td className="px-4 py-3">{product.stock}</td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => startEdit(product)}
-                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded mr-2"
-                      >
-                        Modifier
-                      </button>
-                      <button
-                        onClick={() => handleDeleteProduct(product.id)}
-                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
-                      >
-                        Supprimer
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {products.map((product) => {
+                  const isOutOfStock = product.stock === 0;
+                  const isLowStock = product.stock > 0 && product.stock <= 3;
+
+                  return (
+                    <tr
+                      key={product.id}
+                      className={`border-b transition-colors ${
+                        isOutOfStock
+                          ? 'bg-gray-50 text-gray-500'
+                          : isLowStock
+                          ? 'bg-amber-50/80'
+                          : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      <td className="px-4 py-3">{product.id}</td>
+                      <td className="px-4 py-3">{product.name}</td>
+                      <td className="px-4 py-3">{product.category}</td>
+                      <td className="px-4 py-3">{product.price.toFixed(2)} €</td>
+                      <td className="px-4 py-3">
+                        {isOutOfStock ? (
+                          <span className="inline-flex items-center rounded-full border border-black/10 bg-white px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-black/50">
+                            Rupture de stock
+                          </span>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <span>{product.stock}</span>
+                            {isLowStock && (
+                              <span className="inline-flex items-center rounded-full bg-black px-3 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.3em] text-white">
+                                Dernières pièces
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => startEdit(product)}
+                          className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded mr-2"
+                        >
+                          Modifier
+                        </button>
+                        <button
+                          onClick={() => handleDeleteProduct(product.id)}
+                          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+                        >
+                          Supprimer
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
