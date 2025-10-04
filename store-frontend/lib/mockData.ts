@@ -18,7 +18,7 @@ export const mockProducts: Product[] = [
     price: 129.99,
     imageUrl:
       'https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?auto=format&fit=crop&w=600&q=80',
-    category: 'Bracelets',
+    category: 'bracelet',
     stock: 5,
     createdAt: isoFromCampaign(2, 3),
     updatedAt: isoFromCampaign(3, 1),
@@ -30,7 +30,7 @@ export const mockProducts: Product[] = [
     price: 189.5,
     imageUrl:
       'https://images.unsplash.com/photo-1522312346375-d1a52e2b99b2?auto=format&fit=crop&w=600&q=80',
-    category: 'Colliers',
+    category: 'necklace',
     stock: 2,
     createdAt: isoFromCampaign(5, 6),
     updatedAt: isoFromCampaign(6, 2),
@@ -42,7 +42,7 @@ export const mockProducts: Product[] = [
     price: 79.9,
     imageUrl:
       'https://images.unsplash.com/photo-1520962918287-7448c2878f65?auto=format&fit=crop&w=600&q=80',
-    category: 'Boucles',
+    category: 'earrings',
     stock: 0,
     createdAt: isoFromCampaign(8, 9),
     updatedAt: isoFromCampaign(9, 4),
@@ -99,6 +99,66 @@ export const mockHighlightedProducts: Product[] = [
     highlighted: true,
     isNew: true,
     badges: ['Nouvelle collection'],
+  },
+  {
+    id: 'mock-prod-4',
+    name: 'Sneakers Cuir Urbaines',
+    description: 'Des baskets en cuir pleine fleur avec semelle amortissante pour un confort premium.',
+    price: 159.0,
+    imageUrl:
+      'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=600&q=80',
+    category: 'shoes',
+    stock: 8,
+    createdAt: new Date(now.getTime() - 2 * dayInMs).toISOString(),
+    updatedAt: new Date(now.getTime() - dayInMs).toISOString(),
+  },
+  {
+    id: 'mock-prod-5',
+    name: 'Sac cabas Cuir Cognac',
+    description: 'Un sac cabas spacieux en cuir grainé avec poignées renforcées.',
+    price: 249.5,
+    imageUrl:
+      'https://images.unsplash.com/photo-1612810806695-30ba0a094907?auto=format&fit=crop&w=600&q=80',
+    category: 'bag',
+    stock: 4,
+    createdAt: new Date(now.getTime() - 4 * dayInMs).toISOString(),
+    updatedAt: new Date(now.getTime() - 3 * dayInMs).toISOString(),
+  },
+  {
+    id: 'mock-prod-6',
+    name: 'Montre Acier Graphite',
+    description: 'Un garde-temps minimaliste avec bracelet en maille milanaise.',
+    price: 299.99,
+    imageUrl:
+      'https://images.unsplash.com/photo-1524594154907-23c985ca5c0c?auto=format&fit=crop&w=600&q=80',
+    category: 'watch',
+    stock: 3,
+    createdAt: new Date(now.getTime() - 6 * dayInMs).toISOString(),
+    updatedAt: new Date(now.getTime() - 4 * dayInMs).toISOString(),
+  },
+  {
+    id: 'mock-prod-7',
+    name: 'Chemisier Soie Écru',
+    description: 'Une coupe fluide en soie naturelle pour une allure sophistiquée.',
+    price: 139.99,
+    imageUrl:
+      'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=600&q=80',
+    category: 'clothes',
+    stock: 6,
+    createdAt: new Date(now.getTime() - 8 * dayInMs).toISOString(),
+    updatedAt: new Date(now.getTime() - 7 * dayInMs).toISOString(),
+  },
+  {
+    id: 'mock-prod-8',
+    name: 'Écouteurs Sans Fil Signature',
+    description: 'Réduction de bruit active et autonomie de 24h pour accompagner vos journées.',
+    price: 219.0,
+    imageUrl:
+      'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&w=600&q=80',
+    category: 'tech',
+    stock: 10,
+    createdAt: new Date(now.getTime() - 5 * dayInMs).toISOString(),
+    updatedAt: new Date(now.getTime() - 4 * dayInMs).toISOString(),
   },
 ];
 

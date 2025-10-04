@@ -1,10 +1,12 @@
+import type { CategoryValue } from './categories';
+
 export interface Product {
   id: string;
   name: string;
   description?: string;
   price: number;
   imageUrl: string;
-  category?: string;
+  category?: CategoryValue;
   stock: number;
   createdAt?: string;
   updatedAt?: string;

@@ -1,4 +1,5 @@
 import type { Product, Reservation, ReservationUser } from './types';
+import { isAllowedCategoryValue } from './categories';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -100,7 +101,8 @@ export const parseProduct = (value: unknown): Product | null => {
   }
 
   const description = parseOptionalString(value.description);
-  const category = parseOptionalString(value.category);
+  const rawCategory = parseOptionalString(value.category);
+  const category = rawCategory && isAllowedCategoryValue(rawCategory) ? rawCategory : undefined;
   const createdAt = parseOptionalString(value.createdAt);
   const updatedAt = parseOptionalString(value.updatedAt);
   const highlighted = parseOptionalBoolean(value.highlighted ?? value.isHighlighted);

@@ -9,13 +9,18 @@ import type { Product } from '@/lib/types';
 import { parseProductList } from '@/lib/normalizers';
 import { useDataSource } from '@/lib/DataSourceContext';
 import { mockProducts } from '@/lib/mockData';
+import {
+  CATEGORY_LABEL_MAP,
+  CATEGORY_OPTIONS,
+  type CategoryValue,
+} from '@/lib/categories';
 
 export function BoutiqueCatalogue() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<'all' | CategoryValue>('all');
   const { user } = useAuth();
 
   const { mode, isReady } = useDataSource();
@@ -68,22 +73,28 @@ export function BoutiqueCatalogue() {
     fetchProducts();
   }, [fetchProducts, isReady]);
 
-  const categories = [
+  const availableCategoryValues = new Set<CategoryValue>();
+  for (const product of products) {
+    if (product.category) {
+      availableCategoryValues.add(product.category);
+    }
+  }
+
+  const categories: Array<'all' | CategoryValue> = [
     'all',
-    ...Array.from(
-      new Set(
-        products
-          .map((product) => product.category)
-          .filter((category): category is string => typeof category === 'string' && category.trim().length > 0),
-      ),
+    ...CATEGORY_OPTIONS.filter((option) => availableCategoryValues.has(option.value)).map(
+      (option) => option.value,
     ),
   ];
 
+  const normalizedFilter = filter.trim().toLowerCase();
+
   const filteredProducts = products.filter((product) => {
+    const categoryLabel = product.category ? CATEGORY_LABEL_MAP[product.category].toLowerCase() : '';
     const matchesSearch =
-      product.name.toLowerCase().includes(filter.toLowerCase()) ||
-      product.description?.toLowerCase().includes(filter.toLowerCase()) ||
-      product.category?.toLowerCase().includes(filter.toLowerCase());
+      product.name.toLowerCase().includes(normalizedFilter) ||
+      product.description?.toLowerCase().includes(normalizedFilter) ||
+      categoryLabel.includes(normalizedFilter);
     const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -118,6 +129,9 @@ export function BoutiqueCatalogue() {
       </StorefrontLayout>
     );
   }
+
+  const getCategoryFilterLabel = (value: 'all' | CategoryValue) =>
+    value === 'all' ? 'Tout' : CATEGORY_LABEL_MAP[value];
 
   return (
     <StorefrontLayout activePath="/boutique">
@@ -158,7 +172,7 @@ export function BoutiqueCatalogue() {
                     selectedCategory === category ? 'bg-black text-white' : 'border border-black/20 hover:border-black'
                   }`}
                 >
-                  {category === 'all' ? 'Tout' : category}
+                  {getCategoryFilterLabel(category)}
                 </button>
               ))}
             </div>
@@ -213,6 +227,13 @@ export function BoutiqueCatalogue() {
                 <div className="space-y-4 p-6">
                   <div>
                     <h3 className="mb-2 text-base font-semibold tracking-[0.15em]">{product.name}</h3>
+                    {product.category && (
+                      <div className="mb-3">
+                        <span className="inline-flex items-center rounded-full bg-black/5 px-3 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.3em] text-black/60">
+                          {CATEGORY_LABEL_MAP[product.category]}
+                        </span>
+                      </div>
+                    )}
                     {product.description && (
                       <p className="line-clamp-2 text-xs leading-relaxed text-black/60">{product.description}</p>
                     )}
