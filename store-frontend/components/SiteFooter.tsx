@@ -64,7 +64,21 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-12 flex flex-col gap-3 border-t border-black/10 pt-6 text-xs text-black/60 sm:flex-row sm:items-center sm:justify-between">
-          <p>&copy; {new Date().getFullYear()} Belhos Accessories. Tous droits réservés.</p>
+          <div className="space-y-1">
+            <p>&copy; {new Date().getFullYear()} Belhos Accessories. Tous droits réservés.</p>
+            <p>
+              Réalisé par{' '}
+              <Link
+                href="https://github.com/angel-022"
+                className="font-medium text-black underline-offset-4 transition hover:text-black/80 hover:underline"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Zaineb Marzaq
+              </Link>
+              .
+            </p>
+          </div>
           <div className="flex flex-wrap gap-4 uppercase tracking-[0.3em]">
             <Link href="/mentions-legales" className="transition hover:text-black">
               Mentions légales
