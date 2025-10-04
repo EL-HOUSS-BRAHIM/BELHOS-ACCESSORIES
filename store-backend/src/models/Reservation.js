@@ -1,4 +1,14 @@
 const { db } = require('../config/firebase');
+const Product = require('./Product');
+
+const normalizeProductSnapshot = productDoc => {
+  if (!productDoc || !productDoc.exists) {
+    return undefined;
+  }
+
+  const normalized = Product.normalizeProductDocument(productDoc);
+  return normalized ?? undefined;
+};
 
 class Reservation {
   static async create(reservationData) {
@@ -50,8 +60,9 @@ class Reservation {
         
         // Fetch product details
         const productDoc = await db.collection('products').doc(reservationData.productId).get();
-        if (productDoc.exists) {
-          reservationData.product = { id: productDoc.id, ...productDoc.data() };
+        const normalizedProduct = normalizeProductSnapshot(productDoc);
+        if (normalizedProduct) {
+          reservationData.product = normalizedProduct;
         }
         
         reservations.push(reservationData);
@@ -81,8 +92,9 @@ class Reservation {
       
       // Fetch product details
       const productDoc = await db.collection('products').doc(reservationData.productId).get();
-      if (productDoc.exists) {
-        reservationData.product = { id: productDoc.id, ...productDoc.data() };
+      const normalizedProduct = normalizeProductSnapshot(productDoc);
+      if (normalizedProduct) {
+        reservationData.product = normalizedProduct;
       }
       
       return reservationData;

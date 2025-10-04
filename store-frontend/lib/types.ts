@@ -6,6 +6,9 @@ export interface Product {
   imageUrl: string;
   category?: string;
   stock: number;
+  isHot: boolean;
+  badge: string | null;
+  salePrice: number | null;
   createdAt?: string;
   updatedAt?: string;
 }

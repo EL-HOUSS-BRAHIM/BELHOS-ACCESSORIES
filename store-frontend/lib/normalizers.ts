@@ -33,6 +33,65 @@ const parseString = (value: unknown): string | null => {
   return null;
 };
 
+const parseBooleanFlag = (value: unknown): boolean | null => {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'number') {
+    if (value === 1) {
+      return true;
+    }
+    if (value === 0) {
+      return false;
+    }
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+
+    if (['true', '1', 'yes', 'on'].includes(normalized)) {
+      return true;
+    }
+
+    if (['false', '0', 'no', 'off'].includes(normalized)) {
+      return false;
+    }
+
+    if (normalized.length === 0) {
+      return null;
+    }
+  }
+
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  return null;
+};
+
+const parseNullableString = (value: unknown): string | null => {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  return null;
+};
+
+const parseNullableNumber = (value: unknown): number | null => {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  const parsed = parseNumber(value);
+  return parsed;
+};
+
 export const parseProduct = (value: unknown): Product | null => {
   if (!isRecord(value)) {
     return null;
@@ -43,6 +102,7 @@ export const parseProduct = (value: unknown): Product | null => {
   const price = parseNumber(value.price);
   const imageUrl = parseString(value.imageUrl);
   const stock = parseNumber(value.stock);
+  const isHot = parseBooleanFlag(value.isHot);
 
   if ((typeof id !== 'string' && typeof id !== 'number') || !name || !imageUrl || price === null || stock === null) {
     return null;
@@ -52,6 +112,8 @@ export const parseProduct = (value: unknown): Product | null => {
   const category = parseOptionalString(value.category);
   const createdAt = parseOptionalString(value.createdAt);
   const updatedAt = parseOptionalString(value.updatedAt);
+  const badge = parseNullableString(value.badge);
+  const salePrice = parseNullableNumber(value.salePrice);
 
   return {
     id: String(id),
@@ -61,6 +123,9 @@ export const parseProduct = (value: unknown): Product | null => {
     imageUrl,
     category,
     stock: Math.max(0, Math.floor(stock)),
+    isHot: isHot ?? false,
+    badge,
+    salePrice,
     createdAt,
     updatedAt,
   } satisfies Product;

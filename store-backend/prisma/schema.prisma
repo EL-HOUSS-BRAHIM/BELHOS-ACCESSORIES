@@ -34,6 +34,9 @@ model Product {
   imageUrl     String
   category     String
   stock        Int
+  isHot        Boolean       @default(false)
+  badge        String?
+  salePrice    Float?
   reservations Reservation[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
