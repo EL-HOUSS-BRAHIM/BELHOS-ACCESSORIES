@@ -13,6 +13,8 @@ interface Product {
   imageUrl: string;
   category: string;
   stock: number;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 interface Reservation {
@@ -62,10 +64,13 @@ export default function AdminPage() {
   const fetchData = async () => {
     try {
       const [productsRes, reservationsRes] = await Promise.all([
-        api.get('/products'),
-        api.get('/reservations'),
+        api.get<Product[]>('/products'),
+        api.get<Reservation[]>('/reservations'),
       ]);
-      setProducts(productsRes.data);
+      const sortedProducts = [...productsRes.data].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+      setProducts(sortedProducts);
       setReservations(reservationsRes.data);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -137,6 +142,27 @@ export default function AdminPage() {
     });
     setEditingProduct(null);
     setShowProductForm(false);
+  };
+
+  const formatProductDate = (dateString: string) => {
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) {
+      return 'Date inconnue';
+    }
+    return date.toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    });
+  };
+
+  const isProductNew = (dateString: string) => {
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) {
+      return false;
+    }
+    const recentWindowMs = 7 * 24 * 60 * 60 * 1000;
+    return Date.now() - date.getTime() <= recentWindowMs;
   };
 
   const startEdit = (product: Product) => {
@@ -304,6 +330,7 @@ export default function AdminPage() {
                   <th className="px-4 py-3 text-left">Catégorie</th>
                   <th className="px-4 py-3 text-left">Prix</th>
                   <th className="px-4 py-3 text-left">Stock</th>
+                  <th className="px-4 py-3 text-left">Créé le</th>
                   <th className="px-4 py-3 text-left">Actions</th>
                 </tr>
               </thead>
@@ -315,6 +342,16 @@ export default function AdminPage() {
                     <td className="px-4 py-3">{product.category}</td>
                     <td className="px-4 py-3">{product.price.toFixed(2)} €</td>
                     <td className="px-4 py-3">{product.stock}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center space-x-2">
+                        <span>{formatProductDate(product.createdAt)}</span>
+                        {isProductNew(product.createdAt) && (
+                          <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded-full">
+                            Nouveau
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-3">
                       <button
                         onClick={() => startEdit(product)}
