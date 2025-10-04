@@ -62,7 +62,7 @@ export const mockHighlightedProducts: Product[] = [
     originalPrice: 1120,
     imageUrl:
       'https://images.unsplash.com/photo-1612810806695-30ba0b38fa13?auto=format&fit=crop&w=900&q=80',
-    category: 'Maroquinerie',
+    category: 'bag',
     stock: 4,
     createdAt: new Date(now.getTime() - dayInMs / 2).toISOString(),
     updatedAt: new Date(now.getTime() - dayInMs / 4).toISOString(),
@@ -79,7 +79,7 @@ export const mockHighlightedProducts: Product[] = [
     originalPrice: 1680,
     imageUrl:
       'https://images.unsplash.com/photo-1519408469771-2586093c3f14?auto=format&fit=crop&w=900&q=80',
-    category: 'Horlogerie',
+    category: 'watch',
     stock: 3,
     createdAt: new Date(now.getTime() - 2 * dayInMs).toISOString(),
     updatedAt: new Date(now.getTime() - dayInMs).toISOString(),
@@ -95,7 +95,7 @@ export const mockHighlightedProducts: Product[] = [
     price: 620,
     imageUrl:
       'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80',
-    category: 'Bijoux',
+    category: 'earrings',
     stock: 8,
     createdAt: new Date(now.getTime() - dayInMs).toISOString(),
     updatedAt: new Date(now.getTime() - dayInMs / 6).toISOString(),
