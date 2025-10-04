@@ -1,16 +1,23 @@
+import type { CategoryValue } from './categories';
+
 export interface Product {
   id: string;
   name: string;
   description?: string;
   price: number;
   imageUrl: string;
-  category?: string;
+  category?: CategoryValue;
   stock: number;
   isHot: boolean;
   badge: string | null;
   salePrice: number | null;
   createdAt?: string;
   updatedAt?: string;
+  highlighted?: boolean;
+  isHot?: boolean;
+  isNew?: boolean;
+  originalPrice?: number;
+  badges?: string[];
 }
 
 export interface ReservationUser {

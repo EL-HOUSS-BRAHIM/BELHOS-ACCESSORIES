@@ -1,4 +1,13 @@
 const Product = require('../models/Product');
+const { isValidCategoryValue } = require('../constants/productCategories');
+
+const normalizeCategoryInput = (value) => {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  return value.trim().toLowerCase();
+};
 
 const parseBoolean = value => {
   if (typeof value === 'boolean') {
@@ -152,16 +161,19 @@ const createProduct = async (req, res) => {
       throw parseError;
     }
 
+    const normalizedCategory = normalizeCategoryInput(category);
+
+    if (normalizedCategory && !isValidCategoryValue(normalizedCategory)) {
+      return res.status(400).json({ error: 'Invalid category' });
+    }
+
     const product = await Product.create({
       name,
       description,
       price: parsedPrice,
       imageUrl,
-      category,
-      stock: parsedStock,
-      isHot: parsedIsHot ?? false,
-      badge: parsedBadge ?? null,
-      salePrice: parsedSalePrice ?? null
+      category: normalizedCategory || undefined,
+      stock: stock !== undefined ? Number.parseInt(stock, 10) : 0
     });
 
     res.status(201).json({ message: 'Product created', product });
@@ -228,6 +240,16 @@ const updateProduct = async (req, res) => {
         }
         throw parseError;
       }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(updateData, 'category')) {
+      const normalizedCategory = normalizeCategoryInput(updateData.category);
+
+      if (normalizedCategory && !isValidCategoryValue(normalizedCategory)) {
+        return res.status(400).json({ error: 'Invalid category' });
+      }
+
+      updateData.category = normalizedCategory;
     }
 
     const product = await Product.update(id, updateData);
