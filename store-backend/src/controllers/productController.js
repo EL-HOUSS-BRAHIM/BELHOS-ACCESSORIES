@@ -54,12 +54,12 @@ const createProduct = async (req, res) => {
     const { name, description, price, imageUrl, category, stock } = req.body;
 
     const product = await Product.create({
-      name, 
-      description, 
-      price: parseFloat(price), 
-      imageUrl, 
-      category, 
-      stock: parseInt(stock) || 0
+      name,
+      description,
+      price: price !== undefined ? Number.parseFloat(price) : undefined,
+      imageUrl,
+      category,
+      stock: stock !== undefined ? Number.parseInt(stock, 10) : 0
     });
 
     res.status(201).json({ message: 'Product created', product });
@@ -76,8 +76,12 @@ const updateProduct = async (req, res) => {
     const updateData = req.body;
     
     // Parse numeric fields
-    if (updateData.price) updateData.price = parseFloat(updateData.price);
-    if (updateData.stock) updateData.stock = parseInt(updateData.stock);
+    if (updateData.price !== undefined) {
+      updateData.price = Number.parseFloat(updateData.price);
+    }
+    if (updateData.stock !== undefined) {
+      updateData.stock = Number.parseInt(updateData.stock, 10);
+    }
 
     const product = await Product.update(id, updateData);
 
