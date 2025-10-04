@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Use environment variable for API URL, with fallback for development
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 const api = axios.create({
   baseURL: API_URL,

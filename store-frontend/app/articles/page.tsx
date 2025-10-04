@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
+import { API_URL } from '@/lib/api';
 
 interface Product {
   id: number;
@@ -39,8 +40,7 @@ export default function BoutiquePage() {
       setLoading(true);
       setError(null);
       
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiUrl}/products`);
+      const response = await fetch(`${API_URL}/products`);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch products: ${response.status}`);
