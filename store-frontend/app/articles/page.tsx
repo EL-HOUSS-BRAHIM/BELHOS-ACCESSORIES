@@ -1,3 +1,5 @@
+"use client";
+
 import { BoutiqueCatalogue } from '@/components/BoutiqueCatalogue';
 
 import { useState, useEffect } from 'react';
