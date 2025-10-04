@@ -9,6 +9,21 @@ import type { Product, Reservation } from '@/lib/types';
 import { parseProductList, parseReservationList } from '@/lib/normalizers';
 import { useDataSource } from '@/lib/DataSourceContext';
 import { mockProducts, mockReservations } from '@/lib/mockData';
+import {
+  CATEGORY_LABEL_MAP,
+  CATEGORY_OPTIONS,
+  type CategoryValue,
+  isAllowedCategoryValue,
+} from '@/lib/categories';
+
+type ProductFormData = {
+  name: string;
+  description: string;
+  price: string;
+  imageUrl: string;
+  category: '' | CategoryValue;
+  stock: string;
+};
 
 const truncateText = (text: string, maxLength = 120) => {
   if (!text) return '';
@@ -22,7 +37,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ProductFormData>({
     name: '',
     description: '',
     price: '',
@@ -105,24 +120,31 @@ export default function AdminPage() {
     e.preventDefault();
     try {
       console.debug('[Admin] Creating product', { mode, formData });
+      const resolvedCategory = formData.category || undefined;
+      const resolvedDescription = formData.description.trim()
+        ? formData.description
+        : undefined;
       if (mode === 'mock') {
         const price = Number.parseFloat(formData.price);
         const stock = Number.parseInt(formData.stock, 10);
         const newProduct: Product = {
           id: `mock-prod-${Date.now()}`,
           name: formData.name,
-          description: formData.description || undefined,
+          description: resolvedDescription,
           price: Number.isNaN(price) ? 0 : price,
           imageUrl: formData.imageUrl,
-          category: formData.category || undefined,
+          category: resolvedCategory,
           stock: Number.isNaN(stock) ? 0 : stock,
           createdAt: new Date().toISOString(),
         };
         setProducts((prev) => [newProduct, ...prev]);
       } else {
         await api.post('/products', {
-          ...formData,
+          name: formData.name,
+          description: resolvedDescription,
           price: parseFloat(formData.price),
+          imageUrl: formData.imageUrl,
+          category: resolvedCategory,
           stock: parseInt(formData.stock),
         });
       }
@@ -141,6 +163,10 @@ export default function AdminPage() {
 
     try {
       console.debug('[Admin] Updating product', { mode, productId: editingProduct.id });
+      const resolvedCategory = formData.category || undefined;
+      const resolvedDescription = formData.description.trim()
+        ? formData.description
+        : undefined;
       if (mode === 'mock') {
         const price = Number.parseFloat(formData.price);
         const stock = Number.parseInt(formData.stock, 10);
@@ -150,10 +176,10 @@ export default function AdminPage() {
               ? {
                   ...product,
                   name: formData.name,
-                  description: formData.description || undefined,
+                  description: resolvedDescription,
                   price: Number.isNaN(price) ? product.price : price,
                   imageUrl: formData.imageUrl,
-                  category: formData.category || undefined,
+                  category: resolvedCategory,
                   stock: Number.isNaN(stock) ? product.stock : stock,
                   updatedAt: new Date().toISOString(),
                 }
@@ -162,8 +188,11 @@ export default function AdminPage() {
         );
       } else {
         await api.put(`/products/${editingProduct.id}`, {
-          ...formData,
+          name: formData.name,
+          description: resolvedDescription,
           price: parseFloat(formData.price),
+          imageUrl: formData.imageUrl,
+          category: resolvedCategory,
           stock: parseInt(formData.stock),
         });
       }
@@ -232,6 +261,17 @@ export default function AdminPage() {
     setShowProductForm(false);
   };
 
+  const handleCategorySelect = (value: string) => {
+    if (value === '') {
+      setFormData((prev) => ({ ...prev, category: '' }));
+      return;
+    }
+
+    if (isAllowedCategoryValue(value)) {
+      setFormData((prev) => ({ ...prev, category: value }));
+    }
+  };
+
   const formatProductDate = (dateString?: string) => {
     if (!dateString) {
       return 'Date inconnue';
@@ -268,7 +308,7 @@ export default function AdminPage() {
       description: product.description || '',
       price: product.price.toString(),
       imageUrl: product.imageUrl,
-      category: product.category || '',
+      category: product.category && isAllowedCategoryValue(product.category) ? product.category : '',
       stock: product.stock.toString(),
     });
     setShowProductForm(true);
@@ -368,12 +408,18 @@ export default function AdminPage() {
 
                   <div>
                     <label className="block text-gray-700 font-bold mb-2">Catégorie</label>
-                    <input
-                      type="text"
+                    <select
                       value={formData.category}
-                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      onChange={(e) => handleCategorySelect(e.target.value)}
                       className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    >
+                      <option value="">Sélectionnez une catégorie</option>
+                      {CATEGORY_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div>
@@ -492,7 +538,9 @@ export default function AdminPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3">{product.category}</td>
+                      <td className="px-4 py-3">
+                        {product.category ? CATEGORY_LABEL_MAP[product.category] : '—'}
+                      </td>
                       <td className="px-4 py-3">{product.price.toFixed(2)} €</td>
                       <td className="px-4 py-3">
                         {isOutOfStock ? (
