@@ -33,6 +33,57 @@ const parseString = (value: unknown): string | null => {
   return null;
 };
 
+const parseOptionalBoolean = (value: unknown): boolean | undefined => {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (['true', '1', 'yes', 'y', 'vrai', 'oui'].includes(normalized)) {
+      return true;
+    }
+    if (['false', '0', 'no', 'n', 'faux', 'non'].includes(normalized)) {
+      return false;
+    }
+  }
+
+  if (typeof value === 'number') {
+    if (Number.isFinite(value)) {
+      return value !== 0;
+    }
+  }
+
+  return undefined;
+};
+
+const parseOptionalNumber = (value: unknown): number | undefined => {
+  const parsed = parseNumber(value);
+  return parsed === null ? undefined : parsed;
+};
+
+const parseOptionalStringArray = (value: unknown): string[] | undefined => {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const entries = value
+    .map((item) => {
+      if (typeof item === 'string') {
+        return item;
+      }
+
+      if (isRecord(item) && typeof item.label === 'string') {
+        return item.label;
+      }
+
+      return null;
+    })
+    .filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+
+  return entries.length > 0 ? entries : undefined;
+};
+
 export const parseProduct = (value: unknown): Product | null => {
   if (!isRecord(value)) {
     return null;
@@ -52,6 +103,11 @@ export const parseProduct = (value: unknown): Product | null => {
   const category = parseOptionalString(value.category);
   const createdAt = parseOptionalString(value.createdAt);
   const updatedAt = parseOptionalString(value.updatedAt);
+  const highlighted = parseOptionalBoolean(value.highlighted ?? value.isHighlighted);
+  const isHot = parseOptionalBoolean(value.isHot ?? value.hot ?? value.isHotProduct);
+  const isNew = parseOptionalBoolean(value.isNew ?? value.new ?? value.isNewArrival ?? value.isNewProduct);
+  const originalPrice = parseOptionalNumber(value.originalPrice ?? value.compareAtPrice ?? value.listPrice);
+  const badges = parseOptionalStringArray(value.badges ?? value.tags ?? value.labels);
 
   return {
     id: String(id),
@@ -63,6 +119,11 @@ export const parseProduct = (value: unknown): Product | null => {
     stock: Math.max(0, Math.floor(stock)),
     createdAt,
     updatedAt,
+    ...(highlighted !== undefined ? { highlighted } : {}),
+    ...(isHot !== undefined ? { isHot } : {}),
+    ...(isNew !== undefined ? { isNew } : {}),
+    ...(originalPrice !== undefined ? { originalPrice } : {}),
+    ...(badges ? { badges } : {}),
   } satisfies Product;
 };
 
