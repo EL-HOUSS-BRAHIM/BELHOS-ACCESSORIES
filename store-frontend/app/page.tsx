@@ -1,8 +1,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { CuratedCollectionsSection, curatedCollections } from '@/components/CuratedCollections';
+import { CuratedCollectionsSection } from '@/components/CuratedCollections';
 import { HomeHeader, type HomeNavLink } from '@/components/HomeHeader';
 import { SiteFooter } from '@/components/SiteFooter';
+import { HotProductsCarousel } from '@/components/HotProductsCarousel';
 
 const navLinks: HomeNavLink[] = [
   { href: '/', label: 'Accueil' },

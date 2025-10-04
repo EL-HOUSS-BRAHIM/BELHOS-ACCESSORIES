@@ -8,6 +8,11 @@ export interface Product {
   stock: number;
   createdAt?: string;
   updatedAt?: string;
+  highlighted?: boolean;
+  isHot?: boolean;
+  isNew?: boolean;
+  originalPrice?: number;
+  badges?: string[];
 }
 
 export interface ReservationUser {
