@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
+import { StorefrontLayout } from '@/components/StorefrontLayout';
 
 interface Product {
   id: number;
@@ -22,14 +23,6 @@ interface Reservation {
   createdAt: string;
   product: Product;
 }
-
-const navLinks = [
-  { href: '/', label: 'Accueil' },
-  { href: '/boutique', label: 'Boutique' },
-  { href: '/collections', label: 'Collections' },
-  { href: '/reservations', label: 'Réservations' },
-  { href: '/contact', label: 'Contact' },
-];
 
 const statusLabels: Record<string, string> = {
   pending: 'En attente',
@@ -129,66 +122,18 @@ function ReservationsContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white text-black">
-        <header className="sticky top-0 z-50 border-b border-black/10 bg-white/90 backdrop-blur">
-          <nav className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-6 text-[0.7rem] uppercase tracking-[0.35em] sm:px-6 md:flex-row md:items-center md:justify-between">
-            <Link href="/" className="text-sm font-semibold tracking-[0.45em]">
-              Belhos Accessories
-            </Link>
-            <div className="flex flex-wrap justify-center gap-6 text-[0.65rem] font-medium md:text-xs">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="transition hover:text-black/60"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          </nav>
-        </header>
-        <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6">
-          <div className="flex flex-col items-center justify-center space-y-6">
-            <div className="h-12 w-12 animate-spin rounded-full border-2 border-black/20 border-t-black"></div>
-            <p className="text-sm uppercase tracking-[0.35em] text-black/60">Chargement...</p>
-          </div>
+      <StorefrontLayout activePath="/reservations">
+        <div className="flex flex-col items-center justify-center space-y-6 py-24">
+          <div className="h-12 w-12 animate-spin rounded-full border-2 border-black/20 border-t-black"></div>
+          <p className="text-sm uppercase tracking-[0.35em] text-black/60">Chargement...</p>
         </div>
-      </div>
+      </StorefrontLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white text-black">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-black/10 bg-white/90 backdrop-blur">
-        <nav className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-6 text-[0.7rem] uppercase tracking-[0.35em] sm:px-6 md:flex-row md:items-center md:justify-between">
-          <Link href="/" className="text-sm font-semibold tracking-[0.45em]">
-            Belhos Accessories
-          </Link>
-          <div className="flex flex-wrap justify-center gap-6 text-[0.65rem] font-medium md:text-xs">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`transition ${
-                  link.href === '/reservations' ? 'text-black' : 'hover:text-black/60'
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-          <Link
-            href="/boutique"
-            className="inline-flex items-center justify-center rounded-full border border-black px-5 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.35em] transition hover:bg-black hover:text-white"
-          >
-            Retour à la boutique
-          </Link>
-        </nav>
-      </header>
-
-      <main className="mx-auto max-w-6xl px-4 pb-24 pt-16 sm:px-6 lg:px-8">
+    <StorefrontLayout activePath="/reservations">
+      <main>
         {/* Hero Section */}
         <section className="mb-16 space-y-8 text-center">
           <span className="inline-flex items-center rounded-full bg-black px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-white">
@@ -420,40 +365,22 @@ function ReservationsContent() {
           </Link>
         </section>
       </main>
-    </div>
+    </StorefrontLayout>
   );
 }
 
 export default function ReservationsPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-white text-black">
-        <header className="sticky top-0 z-50 border-b border-black/10 bg-white/90 backdrop-blur">
-          <nav className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-6 text-[0.7rem] uppercase tracking-[0.35em] sm:px-6 md:flex-row md:items-center md:justify-between">
-            <Link href="/" className="text-sm font-semibold tracking-[0.45em]">
-              Belhos Accessories
-            </Link>
-            <div className="flex flex-wrap justify-center gap-6 text-[0.65rem] font-medium md:text-xs">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="transition hover:text-black/60"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          </nav>
-        </header>
-        <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6">
-          <div className="flex flex-col items-center justify-center space-y-6">
+    <Suspense
+      fallback={
+        <StorefrontLayout activePath="/reservations">
+          <div className="flex flex-col items-center justify-center space-y-6 py-24">
             <div className="h-12 w-12 animate-spin rounded-full border-2 border-black/20 border-t-black"></div>
             <p className="text-sm uppercase tracking-[0.35em] text-black/60">Chargement...</p>
           </div>
-        </div>
-      </div>
-    }>
+        </StorefrontLayout>
+      }
+    >
       <ReservationsContent />
     </Suspense>
   );

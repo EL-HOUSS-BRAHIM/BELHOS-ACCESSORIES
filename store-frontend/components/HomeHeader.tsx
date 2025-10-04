@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { usePathname } from 'next/navigation';
 
 export type HomeNavLink = {
   href: string;
@@ -10,10 +11,13 @@ export type HomeNavLink = {
 
 interface HomeHeaderProps {
   links: HomeNavLink[];
+  activePath?: string;
 }
 
-export function HomeHeader({ links }: HomeHeaderProps) {
+export function HomeHeader({ links, activePath }: HomeHeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const pathname = usePathname();
+  const currentPath = useMemo(() => activePath ?? pathname ?? '/', [activePath, pathname]);
 
   return (
     <header className="sticky top-0 z-50 border-b border-black/10 bg-white/95 backdrop-blur">
@@ -36,15 +40,19 @@ export function HomeHeader({ links }: HomeHeaderProps) {
         </button>
 
         <nav className="hidden items-center gap-8 text-[0.7rem] uppercase tracking-[0.35em] text-black/80 lg:flex">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="transition hover:text-black"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {links.map((link) => {
+            const isActive = currentPath === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-current={isActive ? 'page' : undefined}
+                className={`transition ${isActive ? 'text-black' : 'hover:text-black'}`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <Link
@@ -58,16 +66,20 @@ export function HomeHeader({ links }: HomeHeaderProps) {
       {isMenuOpen && (
         <nav className="border-t border-black/10 bg-white lg:hidden">
           <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 text-xs uppercase tracking-[0.3em] text-black/80 sm:px-6">
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="py-1 transition hover:text-black"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {links.map((link) => {
+              const isActive = currentPath === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`py-1 transition ${isActive ? 'text-black' : 'hover:text-black'}`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
             <Link
               href="/reservations"
               className="mt-2 inline-flex items-center justify-center rounded-full border border-black px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-black hover:text-white"
