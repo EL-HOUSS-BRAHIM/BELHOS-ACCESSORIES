@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { StorefrontLayout } from './StorefrontLayout';
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
   description: string;
   price: number;
@@ -15,6 +15,14 @@ interface Product {
   category: string;
   stock: number;
 }
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const hasId = (
+  value: Record<string, unknown>,
+): value is Record<string, unknown> & { id: string | number } =>
+  typeof value.id === 'string' || typeof value.id === 'number';
 
 export function BoutiqueCatalogue() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -41,7 +49,19 @@ export function BoutiqueCatalogue() {
       }
 
       const data = await response.json();
-      setProducts(data);
+      const normalizedProducts = Array.isArray(data)
+        ? data
+            .filter(isRecord)
+            .filter(hasId)
+            .map(
+              (product) =>
+                ({
+                  ...(product as Omit<Product, 'id'>),
+                  id: String(product.id),
+                }) as Product,
+            )
+        : [];
+      setProducts(normalizedProducts);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load products';
       setError(errorMessage);
