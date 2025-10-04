@@ -1,9 +1,3 @@
 {
-  "version": 2,
-  "name": "belhos-accessories-backend",
-  "functions": {
-    "api/**/*.js": {
-      "runtime": "nodejs18.x"
-    }
-  }
+  "version": 2
 }
