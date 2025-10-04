@@ -65,8 +65,12 @@ async function handlePut(req, res, id) {
   const updateData = req.body;
   
   // Parse numeric fields
-  if (updateData.price) updateData.price = parseFloat(updateData.price);
-  if (updateData.stock) updateData.stock = parseInt(updateData.stock);
+  if (updateData.price !== undefined) {
+    updateData.price = Number.parseFloat(updateData.price);
+  }
+  if (updateData.stock !== undefined) {
+    updateData.stock = Number.parseInt(updateData.stock, 10);
+  }
 
   const product = await Product.update(id, updateData);
 
