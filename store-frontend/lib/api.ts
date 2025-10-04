@@ -1,14 +1,19 @@
-import axios from 'axios';
+import axios, { type AxiosInstance } from 'axios';
 
 // Use environment variable for API URL, with fallback for development
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
-const api = axios.create({
+const api: AxiosInstance = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+export const getJson = async (url: string) => {
+  const response = await api.get(url);
+  return response.data as unknown;
+};
 
 // Add token to requests
 api.interceptors.request.use((config) => {

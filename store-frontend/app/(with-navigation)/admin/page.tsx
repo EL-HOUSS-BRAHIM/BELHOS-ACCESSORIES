@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
-import api from '@/lib/api';
+import api, { getJson } from '@/lib/api';
 
 interface Product {
   id: number;
@@ -40,6 +40,48 @@ const truncateText = (text: string, maxLength = 120) => {
   return text.length > maxLength ? `${text.slice(0, maxLength)}…` : text;
 };
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isProduct = (value: unknown): value is Product => {
+  if (!isRecord(value)) return false;
+
+  return (
+    typeof value.id === 'number' &&
+    typeof value.name === 'string' &&
+    typeof value.price === 'number' &&
+    typeof value.stock === 'number' &&
+    typeof value.createdAt === 'string' &&
+    typeof value.imageUrl === 'string'
+  );
+};
+
+const isReservation = (value: unknown): value is Reservation => {
+  if (!isRecord(value)) return false;
+
+  const { user, product } = value as {
+    user?: unknown;
+    product?: unknown;
+  };
+
+  if (!isRecord(user) || !isRecord(product)) {
+    return false;
+  }
+
+  return (
+    typeof value.id === 'number' &&
+    typeof value.quantity === 'number' &&
+    typeof value.status === 'string' &&
+    typeof value.createdAt === 'string' &&
+    typeof user.id === 'number' &&
+    typeof user.name === 'string' &&
+    typeof user.email === 'string' &&
+    typeof product.id === 'number' &&
+    typeof product.name === 'string' &&
+    typeof product.price === 'number'
+  );
+};
+
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'products' | 'reservations'>('products');
   const [products, setProducts] = useState<Product[]>([]);
@@ -69,15 +111,29 @@ export default function AdminPage() {
 
   const fetchData = async () => {
     try {
-      const [productsRes, reservationsRes] = await Promise.all([
-        api.get<Product[]>('/products'),
-        api.get<Reservation[]>('/reservations'),
+      const [rawProducts, rawReservations] = await Promise.all([
+        getJson('/products'),
+        getJson('/reservations'),
       ]);
-      const sortedProducts = [...productsRes.data].sort(
+      if (!Array.isArray(rawProducts)) {
+        console.warn('Unexpected products response payload', rawProducts);
+      }
+      if (!Array.isArray(rawReservations)) {
+        console.warn('Unexpected reservations response payload', rawReservations);
+      }
+
+      const productsData = Array.isArray(rawProducts)
+        ? rawProducts.filter(isProduct)
+        : [];
+      const reservationsData = Array.isArray(rawReservations)
+        ? rawReservations.filter(isReservation)
+        : [];
+
+      const sortedProducts = [...productsData].sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       );
       setProducts(sortedProducts);
-      setReservations(reservationsRes.data);
+      setReservations(reservationsData);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -357,7 +413,25 @@ export default function AdminPage() {
                       }`}
                     >
                       <td className="px-4 py-3">{product.id}</td>
-                      <td className="px-4 py-3">{product.name}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-4">
+                          <Image
+                            src={product.imageUrl}
+                            alt={product.name}
+                            width={64}
+                            height={64}
+                            className="h-16 w-16 rounded-lg object-cover"
+                          />
+                          <div>
+                            <p className="font-semibold">{product.name}</p>
+                            {product.description && (
+                              <p className="mt-1 text-sm text-gray-500">
+                                {truncateText(product.description)}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </td>
                       <td className="px-4 py-3">{product.category}</td>
                       <td className="px-4 py-3">{product.price.toFixed(2)} €</td>
                       <td className="px-4 py-3">
@@ -375,6 +449,16 @@ export default function AdminPage() {
                             )}
                           </div>
                         )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <span>{formatProductDate(product.createdAt)}</span>
+                          {isProductNew(product.createdAt) && (
+                            <span className="inline-flex items-center rounded-full bg-green-500 px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-white">
+                              Nouveau
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <button
