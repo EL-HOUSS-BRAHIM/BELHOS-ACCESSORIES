@@ -7,6 +7,10 @@ const register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
+    if (role && role !== 'USER') {
+      return res.status(400).json({ error: 'Role cannot be set during public registration' });
+    }
+
     // Check if user already exists
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
@@ -21,7 +25,7 @@ const register = async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      role: role || 'USER'
+      role: 'USER'
     });
 
     // Remove password from response
@@ -34,6 +38,37 @@ const register = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Server error during registration' });
+  }
+};
+
+const assignRole = async (req, res) => {
+  try {
+    const { userId, role } = req.body;
+
+    if (!userId || !role) {
+      return res.status(400).json({ error: 'userId and role are required' });
+    }
+
+    const allowedRoles = ['USER', 'ADMIN'];
+    if (!allowedRoles.includes(role)) {
+      return res.status(400).json({ error: 'Invalid role specified' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const updatedUser = await User.update(userId, { role });
+    const { password: _, ...userWithoutPassword } = updatedUser;
+
+    res.json({
+      message: 'Role updated successfully',
+      user: userWithoutPassword
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error while assigning role' });
   }
 };
 
@@ -94,4 +129,4 @@ const getCurrentUser = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getCurrentUser };
+module.exports = { register, login, getCurrentUser, assignRole };

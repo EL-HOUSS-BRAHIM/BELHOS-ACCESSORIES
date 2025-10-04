@@ -19,6 +19,10 @@ module.exports = async function handler(req, res) {
   try {
     const { name, email, password, role } = req.body;
 
+    if (role && role !== 'USER') {
+      return res.status(400).json({ error: 'Role cannot be set during public registration' });
+    }
+
     // Check if user already exists
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
@@ -33,7 +37,7 @@ module.exports = async function handler(req, res) {
       name,
       email,
       password: hashedPassword,
-      role: role || 'USER'
+      role: 'USER'
     });
 
     // Remove password from response

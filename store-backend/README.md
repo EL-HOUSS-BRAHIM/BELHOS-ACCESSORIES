@@ -106,6 +106,7 @@ Authentication, product, and reservation routes are exposed under `/api`. Key ex
 - `POST /api/auth/register`
 - `POST /api/auth/login`
 - `GET /api/auth/me`
+- `POST /api/auth/assign-role` (admin)
 
 ### Products
 - `GET /api/products`
@@ -122,6 +123,35 @@ Authentication, product, and reservation routes are exposed under `/api`. Key ex
 - `DELETE /api/reservations/:id`
 
 Responses follow the JSON structures defined in the respective controllers/models.
+
+## ✅ Manual Test: Registration Role Enforcement
+
+Use the following steps to confirm that unauthenticated registrations always return a `USER` role:
+
+1. **Start the API** (see [Quick Start](#-quick-start-local-express-server)).
+2. **Register a new account without a role override**
+   ```bash
+   curl -X POST http://localhost:5000/api/auth/register \
+     -H 'Content-Type: application/json' \
+     -d '{"name":"Test User","email":"user@example.com","password":"Passw0rd!"}'
+   ```
+   - Expect a `201 Created` response whose JSON payload contains `"role":"USER"`.
+3. **Attempt to create an elevated account anonymously**
+   ```bash
+   curl -X POST http://localhost:5000/api/auth/register \
+     -H 'Content-Type: application/json' \
+     -d '{"name":"Admin Attempt","email":"admin-attempt@example.com","password":"Passw0rd!","role":"ADMIN"}'
+   ```
+   - Expect a `400 Bad Request` response with the message `Role cannot be set during public registration`.
+
+To assign administrative privileges after bootstrapping an admin account, authenticate as an existing admin and call:
+
+```bash
+curl -X POST http://localhost:5000/api/auth/assign-role \
+  -H 'Authorization: Bearer <ADMIN_JWT>' \
+  -H 'Content-Type: application/json' \
+  -d '{"userId":"<user-id>","role":"ADMIN"}'
+```
 
 ## 🔐 Security Best Practices
 
