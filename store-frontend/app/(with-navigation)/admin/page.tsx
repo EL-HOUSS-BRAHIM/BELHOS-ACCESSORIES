@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import api, { getJson } from '@/lib/api';
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
   description: string;
   price: number;
@@ -19,17 +19,17 @@ interface Product {
 }
 
 interface Reservation {
-  id: number;
+  id: string;
   quantity: number;
   status: string;
   createdAt: string;
   user: {
-    id: number;
+    id: string;
     name: string;
     email: string;
   };
   product: {
-    id: number;
+    id: string;
     name: string;
     price: number;
   };
@@ -43,11 +43,30 @@ const truncateText = (text: string, maxLength = 120) => {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
+const ensureStringId = (record: Record<string, unknown>, key: string) => {
+  const rawId = record[key];
+
+  if (typeof rawId === 'string') {
+    return rawId;
+  }
+
+  if (typeof rawId === 'number') {
+    const normalized = rawId.toString();
+    record[key] = normalized;
+    return normalized;
+  }
+
+  return null;
+};
+
 const isProduct = (value: unknown): value is Product => {
   if (!isRecord(value)) return false;
 
+  if (!ensureStringId(value, 'id')) {
+    return false;
+  }
+
   return (
-    typeof value.id === 'number' &&
     typeof value.name === 'string' &&
     typeof value.price === 'number' &&
     typeof value.stock === 'number' &&
@@ -59,6 +78,10 @@ const isProduct = (value: unknown): value is Product => {
 const isReservation = (value: unknown): value is Reservation => {
   if (!isRecord(value)) return false;
 
+  if (!ensureStringId(value, 'id')) {
+    return false;
+  }
+
   const { user, product } = value as {
     user?: unknown;
     product?: unknown;
@@ -68,15 +91,16 @@ const isReservation = (value: unknown): value is Reservation => {
     return false;
   }
 
+  if (!ensureStringId(user, 'id') || !ensureStringId(product, 'id')) {
+    return false;
+  }
+
   return (
-    typeof value.id === 'number' &&
     typeof value.quantity === 'number' &&
     typeof value.status === 'string' &&
     typeof value.createdAt === 'string' &&
-    typeof user.id === 'number' &&
     typeof user.name === 'string' &&
     typeof user.email === 'string' &&
-    typeof product.id === 'number' &&
     typeof product.name === 'string' &&
     typeof product.price === 'number'
   );
@@ -173,7 +197,7 @@ export default function AdminPage() {
     }
   };
 
-  const handleDeleteProduct = async (id: number) => {
+  const handleDeleteProduct = async (id: string) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce produit?')) return;
 
     try {
@@ -184,7 +208,7 @@ export default function AdminPage() {
     }
   };
 
-  const handleUpdateReservationStatus = async (id: number, status: string) => {
+  const handleUpdateReservationStatus = async (id: string, status: string) => {
     try {
       await api.put(`/reservations/${id}`, { status });
       fetchData();

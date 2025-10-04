@@ -9,7 +9,7 @@ import api from '@/lib/api';
 import { StorefrontLayout } from '@/components/StorefrontLayout';
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
   price: number;
   imageUrl: string;
@@ -17,12 +17,20 @@ interface Product {
 }
 
 interface Reservation {
-  id: number;
+  id: string;
   quantity: number;
   status: string;
   createdAt: string;
   product: Product;
 }
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const hasId = (
+  value: Record<string, unknown>,
+): value is Record<string, unknown> & { id: string | number } =>
+  typeof value.id === 'string' || typeof value.id === 'number';
 
 const statusLabels: Record<string, string> = {
   pending: 'En attente',
@@ -64,8 +72,46 @@ function ReservationsContent() {
         api.get('/products'),
         api.get('/reservations/my-reservations'),
       ]);
-      setProducts(productsRes.data);
-      setReservations(reservationsRes.data);
+      const normalizedProducts = Array.isArray(productsRes.data)
+        ? productsRes.data
+            .filter(isRecord)
+            .filter(hasId)
+            .map(
+              (product) =>
+                ({
+                  ...(product as Omit<Product, 'id'>),
+                  id: String(product.id),
+                }) as Product,
+            )
+        : [];
+
+      const normalizedReservations = Array.isArray(reservationsRes.data)
+        ? reservationsRes.data
+            .filter(isRecord)
+            .filter((reservation): reservation is Record<string, unknown> & {
+              product: Record<string, unknown> & { id: string | number };
+            } => {
+              if (!hasId(reservation)) return false;
+              if (!isRecord(reservation.product)) return false;
+              return hasId(reservation.product);
+            })
+            .map(
+              (reservation) =>
+                ({
+                  ...(reservation as Omit<Reservation, 'id' | 'product'> & {
+                    product: Omit<Product, 'id'>;
+                  }),
+                  id: String(reservation.id),
+                  product: {
+                    ...(reservation.product as Omit<Product, 'id'>),
+                    id: String(reservation.product.id),
+                  },
+                }) as Reservation,
+            )
+        : [];
+
+      setProducts(normalizedProducts);
+      setReservations(normalizedReservations);
     } catch (error) {
       console.error('Error fetching data:', error);
       setError('Erreur lors du chargement des données');
@@ -81,9 +127,11 @@ function ReservationsContent() {
     setIsSubmitting(true);
 
     try {
+      const normalizedQuantity = Number.parseInt(String(quantity), 10);
+
       await api.post('/reservations', {
-        productId: parseInt(selectedProduct),
-        quantity: parseInt(quantity.toString()),
+        productId: selectedProduct,
+        quantity: Number.isNaN(normalizedQuantity) ? 1 : normalizedQuantity,
       });
       setSuccess('Réservation créée avec succès!');
       setSelectedProduct('');
@@ -100,7 +148,7 @@ function ReservationsContent() {
     }
   };
 
-  const handleCancelReservation = async (id: number) => {
+  const handleCancelReservation = async (id: string) => {
     if (!confirm('Êtes-vous sûr de vouloir annuler cette réservation?')) return;
 
     try {
@@ -117,7 +165,7 @@ function ReservationsContent() {
   };
 
   const getSelectedProductDetails = () => {
-    return products.find(p => p.id === parseInt(selectedProduct));
+    return products.find((p) => p.id === selectedProduct);
   };
 
   if (loading) {
@@ -191,7 +239,7 @@ function ReservationsContent() {
                     required
                   >
                     <option value="">Sélectionner un produit</option>
-                    {products.filter(p => p.stock > 0).map((product) => (
+                    {products.filter((p) => p.stock > 0).map((product) => (
                       <option key={product.id} value={product.id}>
                         {product.name} - {product.price.toFixed(2)} MAD (Stock: {product.stock})
                       </option>
