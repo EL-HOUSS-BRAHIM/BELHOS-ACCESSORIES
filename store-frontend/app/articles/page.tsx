@@ -18,7 +18,7 @@ interface Product {
 
 const navLinks = [
   { href: '/', label: 'Accueil' },
-  { href: '/articles', label: 'Boutique' },
+  { href: '/articles', label: 'Articles' },
   { href: '/reservations', label: 'Réservations' },
   { href: '/contact', label: 'Contact' },
 ];
