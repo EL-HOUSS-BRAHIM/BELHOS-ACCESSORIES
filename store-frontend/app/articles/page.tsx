@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
@@ -8,6 +8,8 @@ import { API_URL } from '@/lib/api';
 import { StorefrontLayout } from '@/components/StorefrontLayout';
 import type { Product } from '@/lib/types';
 import { parseProductList } from '@/lib/normalizers';
+import { useDataSource } from '@/lib/DataSourceContext';
+import { mockProducts } from '@/lib/mockData';
 
 export default function BoutiquePage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -17,21 +19,36 @@ export default function BoutiquePage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const { user } = useAuth();
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+  const { mode, isReady } = useDataSource();
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      const response = await fetch(`${API_URL}/products`);
-      
+
+      console.debug('[Articles] Fetching products', { mode });
+
+      if (mode === 'mock') {
+        setProducts(parseProductList(mockProducts));
+        console.debug('[Articles] Loaded products from mock data', {
+          count: mockProducts.length,
+        });
+        return;
+      }
+
+      const requestUrl = `${API_URL}/products`;
+      console.debug('[Articles] Requesting products from API', { url: requestUrl });
+      const response = await fetch(requestUrl);
+
+      console.debug('[Articles] API response received', {
+        url: requestUrl,
+        status: response.status,
+      });
+
       if (!response.ok) {
         throw new Error(`Failed to fetch products: ${response.status}`);
       }
-      
+
       const data = await response.json();
       setProducts(parseProductList(data));
     } catch (err) {
@@ -41,7 +58,14 @@ export default function BoutiquePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [mode]);
+
+  useEffect(() => {
+    if (!isReady) {
+      return;
+    }
+    fetchProducts();
+  }, [fetchProducts, isReady]);
 
   // Get unique categories
   const categories = [

@@ -1,11 +1,16 @@
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 // Register new user
 const register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: 'Name, email and password are required' });
+    }
 
     if (role && role !== 'USER') {
       return res.status(400).json({ error: 'Role cannot be set during public registration' });
@@ -31,9 +36,9 @@ const register = async (req, res) => {
     // Remove password from response
     const { password: _, ...userWithoutPassword } = user;
 
-    res.status(201).json({ 
-      message: 'User created successfully', 
-      user: userWithoutPassword 
+    res.status(201).json({
+      message: 'User created successfully',
+      user: userWithoutPassword
     });
   } catch (error) {
     console.error(error);

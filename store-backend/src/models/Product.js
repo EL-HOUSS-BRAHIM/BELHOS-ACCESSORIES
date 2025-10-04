@@ -117,10 +117,10 @@ class Product {
       }
 
       await productRef.update({
-        stock: newStock,
+        stock: Math.trunc(newStock),
         updatedAt: new Date()
       });
-      
+
       return await this.findById(id);
     } catch (error) {
       throw new Error(`Error updating stock: ${error.message}`);

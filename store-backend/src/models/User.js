@@ -34,6 +34,22 @@ class User {
     }
   }
 
+  static async findFirstByRole(role) {
+    try {
+      const usersRef = db.collection('users');
+      const snapshot = await usersRef.where('role', '==', role).limit(1).get();
+
+      if (snapshot.empty) {
+        return null;
+      }
+
+      const doc = snapshot.docs[0];
+      return { id: doc.id, ...doc.data() };
+    } catch (error) {
+      throw new Error(`Error finding user by role: ${error.message}`);
+    }
+  }
+
   static async findById(id) {
     try {
       const userDoc = await db.collection('users').doc(id).get();

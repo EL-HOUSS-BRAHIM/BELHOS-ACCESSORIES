@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useCallback, useEffect, useState, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
@@ -9,6 +9,8 @@ import api from '@/lib/api';
 import { StorefrontLayout } from '@/components/StorefrontLayout';
 import type { Product, Reservation } from '@/lib/types';
 import { parseProductList, parseReservationList } from '@/lib/normalizers';
+import { useDataSource } from '@/lib/DataSourceContext';
+import { mockProducts, mockReservations } from '@/lib/mockData';
 
 const statusLabels: Record<string, string> = {
   pending: 'En attente',
@@ -29,29 +31,19 @@ function ReservationsContent() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { mode, isReady: isDataSourceReady } = useDataSource();
 
-  useEffect(() => {
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-    fetchData();
-    
-    // Check if there's a productId in URL params
-    const productId = searchParams.get('productId');
-    if (productId) {
-      setSelectedProduct(productId);
-    }
-  }, [user, router, searchParams]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
+      console.debug('[Reservations] Fetching data', { mode });
+      setLoading(true);
       const [productsRes, reservationsRes] = await Promise.all([
-        api.get('/products'),
-        api.get('/reservations/my-reservations'),
+        mode === 'mock' ? Promise.resolve({ data: mockProducts }) : api.get('/products'),
+        mode === 'mock'
+          ? Promise.resolve({ data: mockReservations })
+          : api.get('/reservations/my-reservations'),
       ]);
       const normalizedProducts = parseProductList(productsRes.data);
-
       const normalizedReservations = parseReservationList(reservationsRes.data);
 
       setProducts(normalizedProducts);
@@ -62,7 +54,25 @@ function ReservationsContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [mode]);
+
+  useEffect(() => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    if (!isDataSourceReady) {
+      return;
+    }
+
+    fetchData();
+
+    const productId = searchParams.get('productId');
+    if (productId) {
+      setSelectedProduct(productId);
+    }
+  }, [user, router, searchParams, fetchData, isDataSourceReady]);
 
   const handleCreateReservation = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,15 +83,66 @@ function ReservationsContent() {
     try {
       const normalizedQuantity = Number.parseInt(String(quantity), 10);
 
-      await api.post('/reservations', {
-        productId: selectedProduct,
-        quantity: Number.isNaN(normalizedQuantity) ? 1 : normalizedQuantity,
-      });
+      if (mode === 'mock') {
+        console.debug('[Reservations] Creating reservation in mock mode', {
+          productId: selectedProduct,
+          quantity: normalizedQuantity,
+        });
+
+        const quantityToReserve = Number.isNaN(normalizedQuantity) ? 1 : normalizedQuantity;
+        const targetProduct = products.find((product) => product.id === selectedProduct);
+
+        if (!targetProduct) {
+          setError('Produit introuvable');
+          return;
+        }
+
+        if (targetProduct.stock < quantityToReserve) {
+          setError('Stock insuffisant pour cette réservation');
+          return;
+        }
+
+        const newReservation: Reservation = {
+          id: `mock-res-${Date.now()}`,
+          quantity: quantityToReserve,
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+          product: {
+            ...targetProduct,
+            stock: targetProduct.stock - quantityToReserve,
+          },
+          ...(user
+            ? {
+                user: {
+                  id: user.id,
+                  name: user.name,
+                  email: user.email,
+                },
+              }
+            : {}),
+        };
+
+        setReservations((prev) => [newReservation, ...prev]);
+        setProducts((prev) =>
+          prev.map((product) =>
+            product.id === targetProduct.id
+              ? { ...product, stock: Math.max(product.stock - quantityToReserve, 0) }
+              : product,
+          ),
+        );
+      } else {
+        await api.post('/reservations', {
+          productId: selectedProduct,
+          quantity: Number.isNaN(normalizedQuantity) ? 1 : normalizedQuantity,
+        });
+      }
       setSuccess('Réservation créée avec succès!');
       setSelectedProduct('');
       setQuantity(1);
-      fetchData();
-      
+      if (mode !== 'mock') {
+        fetchData();
+      }
+
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
@@ -96,10 +157,31 @@ function ReservationsContent() {
     if (!confirm('Êtes-vous sûr de vouloir annuler cette réservation?')) return;
 
     try {
-      await api.delete(`/reservations/${id}`);
+      if (mode === 'mock') {
+        console.debug('[Reservations] Cancelling reservation in mock mode', { id });
+        let cancelledReservation: Reservation | undefined;
+        setReservations((prev) => {
+          cancelledReservation = prev.find((reservation) => reservation.id === id);
+          return prev.filter((reservation) => reservation.id !== id);
+        });
+
+        if (cancelledReservation) {
+          setProducts((prev) =>
+            prev.map((product) =>
+              product.id === cancelledReservation?.product.id
+                ? { ...product, stock: product.stock + cancelledReservation.quantity }
+                : product,
+            ),
+          );
+        }
+      } else {
+        await api.delete(`/reservations/${id}`);
+      }
       setSuccess('Réservation annulée avec succès!');
-      fetchData();
-      
+      if (mode !== 'mock') {
+        fetchData();
+      }
+
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
