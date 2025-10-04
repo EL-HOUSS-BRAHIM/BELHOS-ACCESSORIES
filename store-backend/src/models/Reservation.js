@@ -1,4 +1,35 @@
 const { db } = require('../config/firebase');
+const Product = require('./Product');
+
+const normalizeProductSnapshot = productDoc => {
+  if (!productDoc || !productDoc.exists) {
+    return undefined;
+  }
+
+  const normalized = Product.normalizeProductDocument(productDoc);
+  return normalized ?? undefined;
+};
+
+const sanitizeUserSnapshot = userDoc => {
+  if (!userDoc || !userDoc.exists || typeof userDoc.data !== 'function') {
+    return undefined;
+  }
+
+  const userData = userDoc.data() || {};
+  const { name, email } = userData;
+
+  const sanitizedUser = { id: userDoc.id };
+
+  if (name !== undefined) {
+    sanitizedUser.name = name;
+  }
+
+  if (email !== undefined) {
+    sanitizedUser.email = email;
+  }
+
+  return sanitizedUser;
+};
 
 class Reservation {
   static async create(reservationData) {
@@ -44,14 +75,16 @@ class Reservation {
         
         // Fetch user details
         const userDoc = await db.collection('users').doc(reservationData.userId).get();
-        if (userDoc.exists) {
-          reservationData.user = { id: userDoc.id, ...userDoc.data() };
+        const sanitizedUser = sanitizeUserSnapshot(userDoc);
+        if (sanitizedUser) {
+          reservationData.user = sanitizedUser;
         }
-        
+
         // Fetch product details
         const productDoc = await db.collection('products').doc(reservationData.productId).get();
-        if (productDoc.exists) {
-          reservationData.product = { id: productDoc.id, ...productDoc.data() };
+        const normalizedProduct = normalizeProductSnapshot(productDoc);
+        if (normalizedProduct) {
+          reservationData.product = normalizedProduct;
         }
         
         reservations.push(reservationData);
@@ -75,14 +108,16 @@ class Reservation {
       
       // Fetch user details
       const userDoc = await db.collection('users').doc(reservationData.userId).get();
-      if (userDoc.exists) {
-        reservationData.user = { id: userDoc.id, ...userDoc.data() };
+      const sanitizedUser = sanitizeUserSnapshot(userDoc);
+      if (sanitizedUser) {
+        reservationData.user = sanitizedUser;
       }
       
       // Fetch product details
       const productDoc = await db.collection('products').doc(reservationData.productId).get();
-      if (productDoc.exists) {
-        reservationData.product = { id: productDoc.id, ...productDoc.data() };
+      const normalizedProduct = normalizeProductSnapshot(productDoc);
+      if (normalizedProduct) {
+        reservationData.product = normalizedProduct;
       }
       
       return reservationData;

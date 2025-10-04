@@ -5,6 +5,7 @@ const path = require('node:path');
 const controllerPath = path.resolve(__dirname, '../src/controllers/reservationController.js');
 const productModulePath = path.resolve(__dirname, '../src/models/Product.js');
 const reservationModulePath = path.resolve(__dirname, '../src/models/Reservation.js');
+const firebaseConfigPath = path.resolve(__dirname, '../src/config/firebase.js');
 
 function createResponseRecorder() {
   return {
@@ -79,6 +80,7 @@ function cleanupModuleCache() {
   delete require.cache[controllerPath];
   delete require.cache[productModulePath];
   delete require.cache[reservationModulePath];
+  delete require.cache[firebaseConfigPath];
 }
 
 test('createReservation rejects non-positive or non-numeric quantities', async (t) => {
@@ -134,4 +136,154 @@ test('createReservation uses validated quantity for reservation and stock update
   assert.equal(reservationStub.findByIdCalls, 1);
   assert.equal(reservationStub.createArgs.quantity, 2);
   assert.deepEqual(productStub.updateStockArgs, { id: 'product-1', delta: -2 });
+});
+
+test('getAllReservations omits user password from attached user payload', async (t) => {
+  cleanupModuleCache();
+
+  const createSnapshot = (id, data) => ({
+    id,
+    exists: data !== undefined,
+    data: () => data
+  });
+
+  const reservationsStore = new Map([
+    [
+      'reservation-1',
+      {
+        userId: 'user-1',
+        productId: 'product-1',
+        quantity: 1,
+        status: 'pending',
+        createdAt: new Date('2024-01-01T00:00:00Z')
+      }
+    ]
+  ]);
+
+  const usersStore = new Map([
+    [
+      'user-1',
+      {
+        name: 'Alice',
+        email: 'alice@example.com',
+        password: 'super-secret'
+      }
+    ]
+  ]);
+
+  const productsStore = new Map([
+    [
+      'product-1',
+      {
+        name: 'Gadget',
+        price: 199
+      }
+    ]
+  ]);
+
+  const buildReservationCollection = () => ({
+    where() {
+      return this;
+    },
+    orderBy() {
+      return this;
+    },
+    async get() {
+      return {
+        docs: Array.from(reservationsStore.entries()).map(([id, data]) => createSnapshot(id, data))
+      };
+    },
+    doc(id) {
+      return {
+        async get() {
+          return createSnapshot(id, reservationsStore.get(id));
+        },
+        async update() {},
+        async delete() {}
+      };
+    }
+  });
+
+  const buildUsersCollection = () => ({
+    doc(id) {
+      return {
+        async get() {
+          return createSnapshot(id, usersStore.get(id));
+        }
+      };
+    }
+  });
+
+  const buildProductsCollection = () => ({
+    doc(id) {
+      return {
+        async get() {
+          return createSnapshot(id, productsStore.get(id));
+        }
+      };
+    }
+  });
+
+  const dbStub = {
+    collection(name) {
+      if (name === 'reservations') {
+        return buildReservationCollection();
+      }
+
+      if (name === 'users') {
+        return buildUsersCollection();
+      }
+
+      if (name === 'products') {
+        return buildProductsCollection();
+      }
+
+      throw new Error(`Unknown collection: ${name}`);
+    }
+  };
+
+  require.cache[firebaseConfigPath] = {
+    id: firebaseConfigPath,
+    filename: firebaseConfigPath,
+    loaded: true,
+    exports: { db: dbStub, auth: {}, admin: {} }
+  };
+
+  require.cache[productModulePath] = {
+    id: productModulePath,
+    filename: productModulePath,
+    loaded: true,
+    exports: {
+      normalizeProductDocument(productDoc) {
+        const data = productDoc.data();
+        return data ? { id: productDoc.id, ...data } : null;
+      }
+    }
+  };
+
+  delete require.cache[reservationModulePath];
+  delete require.cache[controllerPath];
+
+  const controller = require(controllerPath);
+
+  t.after(() => {
+    cleanupModuleCache();
+  });
+
+  const req = { user: { id: 'admin-1', role: 'ADMIN' } };
+  const res = createResponseRecorder();
+
+  await controller.getAllReservations(req, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.ok(Array.isArray(res.body));
+  assert.equal(res.body.length, 1);
+
+  const reservation = res.body[0];
+  assert.equal(reservation.id, 'reservation-1');
+  assert.ok(reservation.user);
+  assert.equal(reservation.user.id, 'user-1');
+  assert.equal(reservation.user.name, 'Alice');
+  assert.equal(reservation.user.email, 'alice@example.com');
+  assert.ok(!('password' in reservation.user));
 });

@@ -1,4 +1,5 @@
 import type { Product, Reservation, ReservationUser } from './types';
+import { isAllowedCategoryValue } from './categories';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -33,6 +34,57 @@ const parseString = (value: unknown): string | null => {
   return null;
 };
 
+const parseOptionalBoolean = (value: unknown): boolean | undefined => {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (['true', '1', 'yes', 'y', 'vrai', 'oui'].includes(normalized)) {
+      return true;
+    }
+    if (['false', '0', 'no', 'n', 'faux', 'non'].includes(normalized)) {
+      return false;
+    }
+  }
+
+  if (typeof value === 'number') {
+    if (Number.isFinite(value)) {
+      return value !== 0;
+    }
+  }
+
+  return undefined;
+};
+
+const parseOptionalNumber = (value: unknown): number | undefined => {
+  const parsed = parseNumber(value);
+  return parsed === null ? undefined : parsed;
+};
+
+const parseOptionalStringArray = (value: unknown): string[] | undefined => {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const entries = value
+    .map((item) => {
+      if (typeof item === 'string') {
+        return item;
+      }
+
+      if (isRecord(item) && typeof item.label === 'string') {
+        return item.label;
+      }
+
+      return null;
+    })
+    .filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+
+  return entries.length > 0 ? entries : undefined;
+};
+
 export const parseProduct = (value: unknown): Product | null => {
   if (!isRecord(value)) {
     return null;
@@ -49,9 +101,17 @@ export const parseProduct = (value: unknown): Product | null => {
   }
 
   const description = parseOptionalString(value.description);
-  const category = parseOptionalString(value.category);
+  const rawCategory = parseOptionalString(value.category);
+  const category = rawCategory && isAllowedCategoryValue(rawCategory) ? rawCategory : undefined;
   const createdAt = parseOptionalString(value.createdAt);
   const updatedAt = parseOptionalString(value.updatedAt);
+  const highlighted = parseOptionalBoolean(value.highlighted ?? value.isHighlighted);
+  const isHot = parseOptionalBoolean(value.isHot ?? value.hot ?? value.isHotProduct);
+  const isNew = parseOptionalBoolean(value.isNew ?? value.new ?? value.isNewArrival ?? value.isNewProduct);
+  const originalPrice = parseOptionalNumber(value.originalPrice ?? value.compareAtPrice ?? value.listPrice);
+  const badges = parseOptionalStringArray(value.badges ?? value.tags ?? value.labels);
+  const badge = parseOptionalString(value.badge);
+  const salePrice = parseOptionalNumber(value.salePrice);
 
   return {
     id: String(id),
@@ -61,8 +121,16 @@ export const parseProduct = (value: unknown): Product | null => {
     imageUrl,
     category,
     stock: Math.max(0, Math.floor(stock)),
+    isHot: isHot ?? false,
+    badge: badge ?? null,
+    salePrice: salePrice ?? null,
     createdAt,
     updatedAt,
+    ...(highlighted !== undefined ? { highlighted } : {}),
+    ...(isHot !== undefined ? { isHot } : {}),
+    ...(isNew !== undefined ? { isNew } : {}),
+    ...(originalPrice !== undefined ? { originalPrice } : {}),
+    ...(badges ? { badges } : {}),
   } satisfies Product;
 };
 

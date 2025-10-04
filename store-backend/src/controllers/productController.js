@@ -1,4 +1,87 @@
 const Product = require('../models/Product');
+const { isValidCategoryValue } = require('../constants/productCategories');
+
+const normalizeCategoryInput = (value) => {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  return value.trim().toLowerCase();
+};
+
+const parseBoolean = value => {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+
+    if (['true', '1', 'yes', 'on'].includes(normalized)) {
+      return true;
+    }
+
+    if (['false', '0', 'no', 'off'].includes(normalized)) {
+      return false;
+    }
+
+    if (normalized.length === 0) {
+      return undefined;
+    }
+  }
+
+  if (value === null || value === undefined) {
+    return undefined;
+  }
+
+  throw new TypeError('Invalid boolean value');
+};
+
+const parseNullableString = value => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value === null) {
+    return null;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  throw new TypeError('Invalid string value');
+};
+
+const parseNullableNumber = value => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value === null) {
+    return null;
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+
+    if (trimmed.length === 0) {
+      return null;
+    }
+
+    const parsed = Number.parseFloat(trimmed);
+    if (!Number.isNaN(parsed) && Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  throw new TypeError('Invalid numeric value');
+};
 
 // Get all products
 const getAllProducts = async (req, res) => {
@@ -51,14 +134,45 @@ const getProductById = async (req, res) => {
 // Create product (Admin only)
 const createProduct = async (req, res) => {
   try {
-    const { name, description, price, imageUrl, category, stock } = req.body;
+    const { name, description, price, imageUrl, category, stock, isHot, badge, salePrice } = req.body;
+
+    const parsedPrice = price !== undefined ? Number.parseFloat(price) : undefined;
+    if (parsedPrice !== undefined && Number.isNaN(parsedPrice)) {
+      return res.status(400).json({ error: 'Invalid price value' });
+    }
+
+    const parsedStock = stock !== undefined ? Number.parseInt(stock, 10) : 0;
+    if (Number.isNaN(parsedStock)) {
+      return res.status(400).json({ error: 'Invalid stock value' });
+    }
+
+    let parsedIsHot;
+    let parsedBadge;
+    let parsedSalePrice;
+
+    try {
+      parsedIsHot = parseBoolean(isHot);
+      parsedBadge = parseNullableString(badge);
+      parsedSalePrice = parseNullableNumber(salePrice);
+    } catch (parseError) {
+      if (parseError instanceof TypeError) {
+        return res.status(400).json({ error: parseError.message });
+      }
+      throw parseError;
+    }
+
+    const normalizedCategory = normalizeCategoryInput(category);
+
+    if (normalizedCategory && !isValidCategoryValue(normalizedCategory)) {
+      return res.status(400).json({ error: 'Invalid category' });
+    }
 
     const product = await Product.create({
       name,
       description,
-      price: price !== undefined ? Number.parseFloat(price) : undefined,
+      price: parsedPrice,
       imageUrl,
-      category,
+      category: normalizedCategory || undefined,
       stock: stock !== undefined ? Number.parseInt(stock, 10) : 0
     });
 
@@ -73,14 +187,69 @@ const createProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
-    
+    const updateData = { ...req.body };
+
     // Parse numeric fields
     if (updateData.price !== undefined) {
-      updateData.price = Number.parseFloat(updateData.price);
+      const parsedPrice = Number.parseFloat(updateData.price);
+      if (Number.isNaN(parsedPrice)) {
+        return res.status(400).json({ error: 'Invalid price value' });
+      }
+      updateData.price = parsedPrice;
     }
     if (updateData.stock !== undefined) {
-      updateData.stock = Number.parseInt(updateData.stock, 10);
+      const parsedStock = Number.parseInt(updateData.stock, 10);
+      if (Number.isNaN(parsedStock)) {
+        return res.status(400).json({ error: 'Invalid stock value' });
+      }
+      updateData.stock = parsedStock;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(updateData, 'isHot')) {
+      try {
+        const parsedIsHot = parseBoolean(updateData.isHot);
+        if (parsedIsHot === undefined) {
+          return res.status(400).json({ error: 'Invalid boolean value' });
+        }
+        updateData.isHot = parsedIsHot;
+      } catch (parseError) {
+        if (parseError instanceof TypeError) {
+          return res.status(400).json({ error: parseError.message });
+        }
+        throw parseError;
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(updateData, 'badge')) {
+      try {
+        updateData.badge = parseNullableString(updateData.badge);
+      } catch (parseError) {
+        if (parseError instanceof TypeError) {
+          return res.status(400).json({ error: parseError.message });
+        }
+        throw parseError;
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(updateData, 'salePrice')) {
+      try {
+        updateData.salePrice = parseNullableNumber(updateData.salePrice);
+      } catch (parseError) {
+        if (parseError instanceof TypeError) {
+          return res.status(400).json({ error: parseError.message });
+        }
+        throw parseError;
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(updateData, 'category')) {
+      const normalizedCategory = normalizeCategoryInput(updateData.category);
+
+      if (normalizedCategory && !isValidCategoryValue(normalizedCategory)) {
+        return res.status(400).json({ error: 'Invalid category' });
+      }
+
+      updateData.category = normalizedCategory;
     }
 
     const product = await Product.update(id, updateData);

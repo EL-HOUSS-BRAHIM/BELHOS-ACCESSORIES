@@ -9,10 +9,37 @@ import type { Product, Reservation } from '@/lib/types';
 import { parseProductList, parseReservationList } from '@/lib/normalizers';
 import { useDataSource } from '@/lib/DataSourceContext';
 import { mockProducts, mockReservations } from '@/lib/mockData';
+import {
+  CATEGORY_LABEL_MAP,
+  CATEGORY_OPTIONS,
+  type CategoryValue,
+  isAllowedCategoryValue,
+} from '@/lib/categories';
+
+type ProductFormData = {
+  name: string;
+  description: string;
+  price: string;
+  imageUrl: string;
+  category: '' | CategoryValue;
+  stock: string;
+};
 
 const truncateText = (text: string, maxLength = 120) => {
   if (!text) return '';
   return text.length > maxLength ? `${text.slice(0, maxLength)}…` : text;
+};
+
+type ProductFormState = {
+  name: string;
+  description: string;
+  price: string;
+  imageUrl: string;
+  category: string;
+  stock: string;
+  isHot: boolean;
+  badge: string;
+  salePrice: string;
 };
 
 export default function AdminPage() {
@@ -22,13 +49,16 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ProductFormData>({
     name: '',
     description: '',
     price: '',
     imageUrl: '',
     category: '',
     stock: '',
+    isHot: false,
+    badge: '',
+    salePrice: '',
   });
 
   const { isAdmin, isHydrated } = useAuth();
@@ -101,28 +131,62 @@ export default function AdminPage() {
     fetchData();
   }, [fetchData, isAdmin, isHydrated, isDataSourceReady, router]);
 
+  const parseSalePriceInput = (input: string): number | null | undefined => {
+    const trimmed = input.trim();
+    if (trimmed.length === 0) {
+      return null;
+    }
+
+    const parsed = Number.parseFloat(trimmed);
+    return Number.isNaN(parsed) ? undefined : parsed;
+  };
+
+  const normalizeBadgeInput = (input: string): string | null => {
+    const trimmed = input.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  };
+
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       console.debug('[Admin] Creating product', { mode, formData });
+      const resolvedCategory = formData.category || undefined;
+      const resolvedDescription = formData.description.trim()
+        ? formData.description
+        : undefined;
       if (mode === 'mock') {
         const price = Number.parseFloat(formData.price);
         const stock = Number.parseInt(formData.stock, 10);
+        const salePriceValue = parseSalePriceInput(formData.salePrice);
+        const normalizedSalePrice = salePriceValue === undefined ? null : salePriceValue;
+        const badgeValue = normalizeBadgeInput(formData.badge);
         const newProduct: Product = {
           id: `mock-prod-${Date.now()}`,
           name: formData.name,
-          description: formData.description || undefined,
+          description: resolvedDescription,
           price: Number.isNaN(price) ? 0 : price,
           imageUrl: formData.imageUrl,
-          category: formData.category || undefined,
+          category: resolvedCategory,
           stock: Number.isNaN(stock) ? 0 : stock,
+          isHot: formData.isHot,
+          badge: badgeValue,
+          salePrice: normalizedSalePrice,
           createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         };
         setProducts((prev) => [newProduct, ...prev]);
       } else {
+        const priceValue = Number.parseFloat(formData.price);
+        const stockValue = Number.parseInt(formData.stock, 10);
+        const salePriceValue = parseSalePriceInput(formData.salePrice);
+        const normalizedSalePrice = salePriceValue === undefined ? null : salePriceValue;
+        const badgeValue = normalizeBadgeInput(formData.badge);
         await api.post('/products', {
-          ...formData,
+          name: formData.name,
+          description: resolvedDescription,
           price: parseFloat(formData.price),
+          imageUrl: formData.imageUrl,
+          category: resolvedCategory,
           stock: parseInt(formData.stock),
         });
       }
@@ -141,19 +205,25 @@ export default function AdminPage() {
 
     try {
       console.debug('[Admin] Updating product', { mode, productId: editingProduct.id });
+      const resolvedCategory = formData.category || undefined;
+      const resolvedDescription = formData.description.trim()
+        ? formData.description
+        : undefined;
       if (mode === 'mock') {
         const price = Number.parseFloat(formData.price);
         const stock = Number.parseInt(formData.stock, 10);
+        const salePriceValue = parseSalePriceInput(formData.salePrice);
+        const badgeValue = normalizeBadgeInput(formData.badge);
         setProducts((prev) =>
           prev.map((product) =>
             product.id === editingProduct.id
               ? {
                   ...product,
                   name: formData.name,
-                  description: formData.description || undefined,
+                  description: resolvedDescription,
                   price: Number.isNaN(price) ? product.price : price,
                   imageUrl: formData.imageUrl,
-                  category: formData.category || undefined,
+                  category: resolvedCategory,
                   stock: Number.isNaN(stock) ? product.stock : stock,
                   updatedAt: new Date().toISOString(),
                 }
@@ -161,9 +231,18 @@ export default function AdminPage() {
           ),
         );
       } else {
+        const priceValue = Number.parseFloat(formData.price);
+        const stockValue = Number.parseInt(formData.stock, 10);
+        const salePriceValue = parseSalePriceInput(formData.salePrice);
+        const normalizedSalePrice =
+          salePriceValue === undefined ? editingProduct.salePrice : salePriceValue;
+        const badgeValue = normalizeBadgeInput(formData.badge);
         await api.put(`/products/${editingProduct.id}`, {
-          ...formData,
+          name: formData.name,
+          description: resolvedDescription,
           price: parseFloat(formData.price),
+          imageUrl: formData.imageUrl,
+          category: resolvedCategory,
           stock: parseInt(formData.stock),
         });
       }
@@ -227,9 +306,23 @@ export default function AdminPage() {
       imageUrl: '',
       category: '',
       stock: '',
+      isHot: false,
+      badge: '',
+      salePrice: '',
     });
     setEditingProduct(null);
     setShowProductForm(false);
+  };
+
+  const handleCategorySelect = (value: string) => {
+    if (value === '') {
+      setFormData((prev) => ({ ...prev, category: '' }));
+      return;
+    }
+
+    if (isAllowedCategoryValue(value)) {
+      setFormData((prev) => ({ ...prev, category: value }));
+    }
   };
 
   const formatProductDate = (dateString?: string) => {
@@ -268,8 +361,11 @@ export default function AdminPage() {
       description: product.description || '',
       price: product.price.toString(),
       imageUrl: product.imageUrl,
-      category: product.category || '',
+      category: product.category && isAllowedCategoryValue(product.category) ? product.category : '',
       stock: product.stock.toString(),
+      isHot: product.isHot,
+      badge: product.badge ?? '',
+      salePrice: product.salePrice != null ? product.salePrice.toString() : '',
     });
     setShowProductForm(true);
   };
@@ -368,12 +464,18 @@ export default function AdminPage() {
 
                   <div>
                     <label className="block text-gray-700 font-bold mb-2">Catégorie</label>
-                    <input
-                      type="text"
+                    <select
                       value={formData.category}
-                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      onChange={(e) => handleCategorySelect(e.target.value)}
                       className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    >
+                      <option value="">Sélectionnez une catégorie</option>
+                      {CATEGORY_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div>
@@ -399,6 +501,29 @@ export default function AdminPage() {
                     />
                   </div>
 
+                  <div>
+                    <label className="block text-gray-700 font-bold mb-2">Prix promotionnel (€)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.salePrice}
+                      onChange={(e) => setFormData({ ...formData, salePrice: e.target.value })}
+                      className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Laisser vide pour conserver le prix standard"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 font-bold mb-2">Badge</label>
+                    <input
+                      type="text"
+                      value={formData.badge}
+                      onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
+                      className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Ex: Coup de cœur, Nouveauté"
+                    />
+                  </div>
+
                   <div className="md:col-span-2">
                     <label className="block text-gray-700 font-bold mb-2">URL de l&apos;image</label>
                     <input
@@ -408,6 +533,19 @@ export default function AdminPage() {
                       className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     />
+                  </div>
+
+                  <div className="md:col-span-2 flex items-center gap-3">
+                    <input
+                      id="isHot"
+                      type="checkbox"
+                      checked={formData.isHot}
+                      onChange={(e) => setFormData({ ...formData, isHot: e.target.checked })}
+                      className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="isHot" className="text-gray-700 font-semibold">
+                      Mettre en avant ce produit (Hot)
+                    </label>
                   </div>
 
                   <div className="md:col-span-2">
@@ -492,7 +630,9 @@ export default function AdminPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3">{product.category}</td>
+                      <td className="px-4 py-3">
+                        {product.category ? CATEGORY_LABEL_MAP[product.category] : '—'}
+                      </td>
                       <td className="px-4 py-3">{product.price.toFixed(2)} €</td>
                       <td className="px-4 py-3">
                         {isOutOfStock ? (
