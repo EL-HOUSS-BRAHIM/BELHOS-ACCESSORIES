@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
@@ -31,6 +32,11 @@ interface Reservation {
     price: number;
   };
 }
+
+const truncateText = (text: string, maxLength = 120) => {
+  if (!text) return '';
+  return text.length > maxLength ? `${text.slice(0, maxLength)}…` : text;
+};
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'products' | 'reservations'>('products');
@@ -295,13 +301,67 @@ export default function AdminPage() {
           )}
 
           {/* Products List */}
-          <div className="overflow-x-auto">
-            <table className="w-full bg-white shadow-lg rounded-lg">
-              <thead className="bg-gray-200">
+          <div className="space-y-4 lg:hidden">
+            {products.map((product) => (
+              <div
+                key={product.id}
+                className="flex flex-col gap-4 rounded-lg bg-white p-4 shadow-lg sm:flex-row"
+              >
+                <div className="relative h-32 w-full overflow-hidden rounded-md border bg-gray-100 sm:h-24 sm:w-24">
+                  <Image
+                    src={product.imageUrl || '/window.svg'}
+                    alt={product.name}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 100vw, 96px"
+                  />
+                </div>
+                <div className="flex flex-1 flex-col gap-2">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">{product.name}</h3>
+                      <p className="text-sm text-gray-500">
+                        {product.category || 'Sans catégorie'}
+                      </p>
+                    </div>
+                    <span className="text-base font-bold text-blue-600">
+                      {product.price.toFixed(2)} €
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    {truncateText(product.description, 140) || 'Aucune description disponible.'}
+                  </p>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <span className="text-sm text-gray-500">
+                      Stock : <span className="font-semibold text-gray-800">{product.stock}</span>
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => startEdit(product)}
+                        className="rounded bg-yellow-500 px-3 py-1 text-sm font-semibold text-white transition hover:bg-yellow-600"
+                      >
+                        Modifier
+                      </button>
+                      <button
+                        onClick={() => handleDeleteProduct(product.id)}
+                        className="rounded bg-red-500 px-3 py-1 text-sm font-semibold text-white transition hover:bg-red-600"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden overflow-x-auto lg:block">
+            <table className="w-full overflow-hidden rounded-lg bg-white shadow-lg">
+              <thead className="bg-gray-100 text-sm uppercase tracking-wide text-gray-600">
                 <tr>
                   <th className="px-4 py-3 text-left">ID</th>
-                  <th className="px-4 py-3 text-left">Nom</th>
-                  <th className="px-4 py-3 text-left">Catégorie</th>
+                  <th className="px-4 py-3 text-left">Produit</th>
+                  <th className="px-4 py-3 text-left">Description</th>
                   <th className="px-4 py-3 text-left">Prix</th>
                   <th className="px-4 py-3 text-left">Stock</th>
                   <th className="px-4 py-3 text-left">Actions</th>
@@ -309,25 +369,49 @@ export default function AdminPage() {
               </thead>
               <tbody>
                 {products.map((product) => (
-                  <tr key={product.id} className="border-b hover:bg-gray-50">
-                    <td className="px-4 py-3">{product.id}</td>
-                    <td className="px-4 py-3">{product.name}</td>
-                    <td className="px-4 py-3">{product.category}</td>
-                    <td className="px-4 py-3">{product.price.toFixed(2)} €</td>
-                    <td className="px-4 py-3">{product.stock}</td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => startEdit(product)}
-                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded mr-2"
-                      >
-                        Modifier
-                      </button>
-                      <button
-                        onClick={() => handleDeleteProduct(product.id)}
-                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
-                      >
-                        Supprimer
-                      </button>
+                  <tr key={product.id} className="border-b last:border-b-0 hover:bg-gray-50">
+                    <td className="px-4 py-4 text-sm text-gray-600">{product.id}</td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-4">
+                        <div className="relative h-16 w-16 overflow-hidden rounded-md border bg-gray-100">
+                          <Image
+                            src={product.imageUrl || '/window.svg'}
+                            alt={product.name}
+                            fill
+                            className="object-cover"
+                            sizes="64px"
+                          />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900">{product.name}</p>
+                          <p className="text-sm text-gray-500">
+                            {product.category || 'Sans catégorie'}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 text-sm text-gray-600">
+                      {truncateText(product.description, 100) || 'Aucune description disponible.'}
+                    </td>
+                    <td className="px-4 py-4 font-semibold text-blue-600">
+                      {product.price.toFixed(2)} €
+                    </td>
+                    <td className="px-4 py-4 text-sm text-gray-700">{product.stock}</td>
+                    <td className="px-4 py-4">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => startEdit(product)}
+                          className="rounded bg-yellow-500 px-3 py-1 text-sm font-semibold text-white transition hover:bg-yellow-600"
+                        >
+                          Modifier
+                        </button>
+                        <button
+                          onClick={() => handleDeleteProduct(product.id)}
+                          className="rounded bg-red-500 px-3 py-1 text-sm font-semibold text-white transition hover:bg-red-600"
+                        >
+                          Supprimer
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
