@@ -1,375 +1,149 @@
 # BELHOS ACCESSORIES - Backend API
 
-Backend API for the BELHOS ACCESSORIES e-commerce platform built with Node.js, Express, and Prisma.
+Backend API for the BELHOS ACCESSORIES e-commerce platform built with Node.js, Express, and Firebase Admin SDK backed by Firestore.
 
 ## 🛠️ Tech Stack
 
 - **Runtime**: Node.js
 - **Framework**: Express.js
-- **Database**: PostgreSQL
-- **ORM**: Prisma
+- **Database**: Google Firestore via Firebase Admin SDK
 - **Authentication**: JWT
 - **Password Hashing**: bcrypt
 - **CORS**: cors middleware
+
+## 🔌 Firebase Admin & Firestore Setup
+
+The backend uses the Firebase Admin SDK to talk to Firestore. Initialization happens in [`src/config/firebase.js`](src/config/firebase.js), which looks for a service-account credential at boot time:
+
+1. **Create a Firebase service account** with the "Editor" role (or Firestore access) in the [Firebase Console](https://console.firebase.google.com/).
+2. **Download the service-account JSON** and keep it secure.
+3. **Provide credentials to the API** in one of two ways:
+   - **Environment variable**: set `FIREBASE_SERVICE_ACCOUNT_KEY` to the full JSON string of the service account and `FIREBASE_DATABASE_URL` to your Firebase Realtime Database/Firestore URL. This is the method used in serverless (Vercel) deployments.
+   - **Default credentials**: when running locally you may instead point `GOOGLE_APPLICATION_CREDENTIALS` at the JSON file so the Admin SDK picks it up automatically. In this case leave `FIREBASE_SERVICE_ACCOUNT_KEY` unset and the app will fall back to `admin.initializeApp()`.
+
+The Admin SDK exports a Firestore client (`db`) and Auth client (`auth`) that are consumed by the model layer:
+
+- [`src/models/User.js`](src/models/User.js)
+- [`src/models/Product.js`](src/models/Product.js)
+- [`src/models/Reservation.js`](src/models/Reservation.js)
+
+These models wrap Firestore collections and are shared by both the Express server and the Vercel serverless handlers.
 
 ## 📁 Project Structure
 
 ```
 store-backend/
+├── api/                     # Vercel serverless function entry points
+│   ├── auth/
+│   ├── products/
+│   └── reservations/
 ├── src/
+│   ├── config/
+│   │   └── firebase.js      # Firebase Admin bootstrap
 │   ├── controllers/
-│   │   ├── authController.js
-│   │   ├── productController.js
-│   │   └── reservationController.js
 │   ├── middleware/
-│   │   └── auth.js
+│   ├── models/
 │   ├── routes/
-│   │   ├── authRoutes.js
-│   │   ├── productRoutes.js
-│   │   └── reservationRoutes.js
-│   ├── utils/
-│   │   └── prisma.js
-│   └── server.js
-├── prisma/
-│   └── schema.prisma
-├── .env
-├── .gitignore
-└── package.json
+│   └── server.js            # Express entry point for local dev / Node hosting
+├── .env                     # Local environment variables (not committed)
+├── package.json
+└── vercel.json              # Serverless deployment configuration
 ```
 
-## 🚀 Quick Start
+## ⚙️ Environment Variables
 
-### 1. Install Dependencies
+| Variable | Description | Required | Example |
+|----------|-------------|----------|---------|
+| `JWT_SECRET` | Secret key for JWT signing | ✅ | `super-secret-jwt` |
+| `PORT` | Local server port (Express) | ➖ | `5000` |
+| `NODE_ENV` | Environment mode | ➖ | `development` |
+| `FIREBASE_SERVICE_ACCOUNT_KEY` | JSON string of service-account credentials | ✅ (Vercel) / ➖ (local default credentials) | `{ "type": "service_account", ... }` |
+| `FIREBASE_DATABASE_URL` | Firebase database URL used during Admin init | ✅ when using `FIREBASE_SERVICE_ACCOUNT_KEY` | `https://<project-id>.firebaseio.com` |
+| `GOOGLE_APPLICATION_CREDENTIALS` | File path to service-account JSON (local only) | ➖ | `/path/to/serviceAccount.json` |
 
+> **Tip:** When copying the JSON into `FIREBASE_SERVICE_ACCOUNT_KEY`, escape double quotes or use single quotes in your `.env` file.
+
+## 🚀 Quick Start (Local Express Server)
+
+1. **Install dependencies**
+   ```bash
+   pnpm install   # or npm install / yarn install
+   ```
+2. **Create `.env`** (see environment variables above).
+   - If you prefer file-based credentials locally, set `GOOGLE_APPLICATION_CREDENTIALS=/absolute/path/to/serviceAccount.json` and omit `FIREBASE_SERVICE_ACCOUNT_KEY`.
+   - Otherwise, paste the JSON into `FIREBASE_SERVICE_ACCOUNT_KEY` and set `FIREBASE_DATABASE_URL`.
+3. **Start the development server**
+   ```bash
+   pnpm dev
+   ```
+   The Express server defined in [`src/server.js`](src/server.js) will boot on `http://localhost:5000` and expose the REST API.
+
+For a production-style run, use:
 ```bash
-npm install
+pnpm start
 ```
 
-### 2. Configure Environment
+## ☁️ Deploying to Vercel
 
-Create a `.env` file with:
+- The `vercel.json` file maps API routes to the handlers inside the `/api` directory.
+- Each handler imports the same Firestore-backed models, so ensure the following environment variables are set in your Vercel project settings:
+  - `FIREBASE_SERVICE_ACCOUNT_KEY`
+  - `FIREBASE_DATABASE_URL`
+  - `JWT_SECRET`
+- Deploy via the Vercel dashboard or CLI; no build step is required (`vercel-build` is a no-op).
 
-```env
-DATABASE_URL="postgresql://user:password@localhost:5432/storedb"
-JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
-PORT=5000
-NODE_ENV=development
-```
+## 🔁 Shared Architecture
 
-### 3. Setup Database
-
-Run Prisma migrations:
-
-```bash
-npm run prisma:migrate
-```
-
-Generate Prisma Client:
-
-```bash
-npm run prisma:generate
-```
-
-### 4. Start Server
-
-**Development**:
-```bash
-npm run dev
-```
-
-**Production**:
-```bash
-npm start
-```
-
-Server runs on `http://localhost:5000`
+- **Express entry point**: [`src/server.js`](src/server.js) wires up middleware and routes for local development or traditional Node hosting.
+- **Serverless entry points**: `/api/*` files (e.g., [`api/products/index.js`](api/products/index.js)) export handlers compatible with Vercel. They configure CORS headers manually and reuse the same model operations as the Express routes/controllers.
+- **Model layer**: Firestore collection accessors located in [`src/models`](src/models) provide CRUD operations for users, products, and reservations.
 
 ## 📋 API Endpoints
 
-### Authentication Endpoints
+Authentication, product, and reservation routes are exposed under `/api`. Key examples:
 
-#### Register User
-```http
-POST /api/auth/register
-Content-Type: application/json
+### Authentication
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
 
-{
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "securepassword"
-}
-```
+### Products
+- `GET /api/products`
+- `GET /api/products/:id`
+- `POST /api/products` (admin)
+- `PUT /api/products/:id` (admin)
+- `DELETE /api/products/:id` (admin)
 
-#### Login User
-```http
-POST /api/auth/login
-Content-Type: application/json
+### Reservations
+- `GET /api/reservations` (admin)
+- `GET /api/reservations/my-reservations`
+- `POST /api/reservations`
+- `PUT /api/reservations/:id` (admin)
+- `DELETE /api/reservations/:id`
 
-{
-  "email": "john@example.com",
-  "password": "securepassword"
-}
-```
+Responses follow the JSON structures defined in the respective controllers/models.
 
-#### Get Current User
-```http
-GET /api/auth/me
-Authorization: Bearer <token>
-```
+## 🔐 Security Best Practices
 
-### Product Endpoints
+- Passwords hashed with bcrypt (10 salt rounds).
+- JWT tokens with seven-day expiration.
+- CORS configured for the frontend origin in `src/server.js`.
+- Environment variables keep secrets out of the codebase.
+- Role-based access control enforced in middleware and serverless handlers.
 
-#### Get All Products
-```http
-GET /api/products
-Query Parameters:
-  - category (optional)
-  - minPrice (optional)
-  - maxPrice (optional)
-```
-
-#### Get Single Product
-```http
-GET /api/products/:id
-```
-
-#### Create Product (Admin Only)
-```http
-POST /api/products
-Authorization: Bearer <admin-token>
-Content-Type: application/json
-
-{
-  "name": "Luxury Watch",
-  "description": "Premium timepiece",
-  "price": 499.99,
-  "imageUrl": "https://example.com/watch.jpg",
-  "category": "Watches",
-  "stock": 10
-}
-```
-
-#### Update Product (Admin Only)
-```http
-PUT /api/products/:id
-Authorization: Bearer <admin-token>
-Content-Type: application/json
-
-{
-  "name": "Updated Name",
-  "price": 599.99,
-  "stock": 5
-}
-```
-
-#### Delete Product (Admin Only)
-```http
-DELETE /api/products/:id
-Authorization: Bearer <admin-token>
-```
-
-### Reservation Endpoints
-
-#### Get All Reservations (Admin Only)
-```http
-GET /api/reservations
-Authorization: Bearer <admin-token>
-```
-
-#### Get User Reservations
-```http
-GET /api/reservations/my-reservations
-Authorization: Bearer <token>
-```
-
-#### Create Reservation
-```http
-POST /api/reservations
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "productId": 1,
-  "quantity": 2
-}
-```
-
-#### Update Reservation Status (Admin Only)
-```http
-PUT /api/reservations/:id
-Authorization: Bearer <admin-token>
-Content-Type: application/json
-
-{
-  "status": "confirmed"
-}
-```
-
-#### Delete Reservation
-```http
-DELETE /api/reservations/:id
-Authorization: Bearer <token>
-```
-
-## 🗄️ Database Schema
-
-### Models
-
-#### User
-```prisma
-model User {
-  id           Int           @id @default(autoincrement())
-  name         String
-  email        String        @unique
-  password     String
-  role         Role          @default(USER)
-  createdAt    DateTime      @default(now())
-  reservations Reservation[]
-}
-```
-
-#### Product
-```prisma
-model Product {
-  id           Int           @id @default(autoincrement())
-  name         String
-  description  String?
-  price        Float
-  imageUrl     String
-  category     String?
-  stock        Int           @default(0)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  reservations Reservation[]
-}
-```
-
-#### Reservation
-```prisma
-model Reservation {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  productId Int
-  quantity  Int
-  status    String   @default("pending")
-  createdAt DateTime @default(now())
-  
-  user    User    @relation(fields: [userId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
-}
-```
-
-#### Role Enum
-```prisma
-enum Role {
-  USER
-  ADMIN
-}
-```
-
-## 🔒 Authentication & Authorization
-
-### JWT Token Structure
-```javascript
-{
-  id: userId,
-  email: userEmail,
-  role: userRole,
-  exp: expirationTimestamp
-}
-```
-
-### Middleware
-
-#### `authenticateToken`
-Verifies JWT token from Authorization header
-
-#### `isAdmin`
-Checks if authenticated user has ADMIN role
-
-## 📦 NPM Scripts
+## 🧰 Useful Scripts
 
 ```json
 {
   "start": "node src/server.js",
   "dev": "nodemon src/server.js",
-  "prisma:migrate": "npx prisma migrate dev",
-  "prisma:generate": "npx prisma generate",
-  "prisma:studio": "npx prisma studio"
+  "vercel-build": "echo 'Build complete'"
 }
 ```
 
-## 🧪 Testing with Prisma Studio
+## 🩺 Health Check
 
-Open Prisma Studio to view and edit database:
-
-```bash
-npm run prisma:studio
-```
-
-Access at `http://localhost:5555`
-
-## ⚙️ Environment Variables
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| DATABASE_URL | PostgreSQL connection string | `postgresql://user:pass@localhost:5432/db` |
-| JWT_SECRET | Secret key for JWT signing | `your-secret-key` |
-| PORT | Server port | `5000` |
-| NODE_ENV | Environment mode | `development` or `production` |
-
-## 🔐 Security Best Practices
-
-- ✅ Passwords hashed with bcrypt (10 salt rounds)
-- ✅ JWT tokens with expiration (7 days)
-- ✅ CORS configured for frontend origin
-- ✅ Environment variables for secrets
-- ✅ Role-based access control
-- ✅ Input validation on all endpoints
-- ✅ Protected routes with authentication middleware
-
-## 🐛 Error Handling
-
-All endpoints return consistent error responses:
-
-```json
-{
-  "error": "Error message description"
-}
-```
-
-HTTP Status Codes:
-- `200` - Success
-- `201` - Created
-- `400` - Bad Request
-- `401` - Unauthorized
-- `403` - Forbidden
-- `404` - Not Found
-- `500` - Internal Server Error
-
-## 📝 Development Tips
-
-1. **Database Migrations**: After schema changes, run:
-   ```bash
-   npm run prisma:migrate
-   ```
-
-2. **Reset Database**: To reset and reseed:
-   ```bash
-   npx prisma migrate reset
-   ```
-
-3. **View Logs**: Server logs all errors to console
-
-4. **CORS**: Update origin in `server.js` for production
-
-## 🚀 Deployment
-
-1. Set up PostgreSQL database on hosting platform
-2. Update `DATABASE_URL` in production environment
-3. Run migrations: `npm run prisma:migrate`
-4. Set `NODE_ENV=production`
-5. Start server: `npm start`
+Visit `GET /health` locally to confirm the Express server is running. On Vercel, `api/health.js` serves the same purpose.
 
 ## 📄 License
 
