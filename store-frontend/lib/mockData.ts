@@ -1,7 +1,13 @@
 import type { Product, Reservation } from './types';
 
-const now = new Date();
-const dayInMs = 24 * 60 * 60 * 1000;
+const CAMPAIGN_BASE_ISO = '2025-10-01T09:00:00.000Z';
+
+const isoFromCampaign = (daysOffset: number, hoursOffset = 0) => {
+  const base = new Date(CAMPAIGN_BASE_ISO);
+  base.setUTCDate(base.getUTCDate() + daysOffset);
+  base.setUTCHours(base.getUTCHours() + hoursOffset);
+  return base.toISOString();
+};
 
 export const mockProducts: Product[] = [
   {
@@ -14,8 +20,8 @@ export const mockProducts: Product[] = [
       'https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?auto=format&fit=crop&w=600&q=80',
     category: 'Bracelets',
     stock: 5,
-    createdAt: new Date(now.getTime() - dayInMs).toISOString(),
-    updatedAt: new Date(now.getTime() - dayInMs / 2).toISOString(),
+    createdAt: isoFromCampaign(2, 3),
+    updatedAt: isoFromCampaign(3, 1),
   },
   {
     id: 'mock-prod-2',
@@ -26,8 +32,8 @@ export const mockProducts: Product[] = [
       'https://images.unsplash.com/photo-1522312346375-d1a52e2b99b2?auto=format&fit=crop&w=600&q=80',
     category: 'Colliers',
     stock: 2,
-    createdAt: new Date(now.getTime() - 3 * dayInMs).toISOString(),
-    updatedAt: new Date(now.getTime() - 2 * dayInMs).toISOString(),
+    createdAt: isoFromCampaign(5, 6),
+    updatedAt: isoFromCampaign(6, 2),
   },
   {
     id: 'mock-prod-3',
@@ -38,8 +44,8 @@ export const mockProducts: Product[] = [
       'https://images.unsplash.com/photo-1520962918287-7448c2878f65?auto=format&fit=crop&w=600&q=80',
     category: 'Boucles',
     stock: 0,
-    createdAt: new Date(now.getTime() - 7 * dayInMs).toISOString(),
-    updatedAt: new Date(now.getTime() - 6 * dayInMs).toISOString(),
+    createdAt: isoFromCampaign(8, 9),
+    updatedAt: isoFromCampaign(9, 4),
   },
 ];
 
@@ -48,7 +54,7 @@ export const mockReservations: Reservation[] = [
     id: 'mock-res-1',
     quantity: 1,
     status: 'pending',
-    createdAt: new Date(now.getTime() - 2 * dayInMs).toISOString(),
+    createdAt: isoFromCampaign(4, 5),
     product: mockProducts[0],
     user: {
       id: 'mock-user-1',
@@ -60,7 +66,7 @@ export const mockReservations: Reservation[] = [
     id: 'mock-res-2',
     quantity: 2,
     status: 'confirmed',
-    createdAt: new Date(now.getTime() - 5 * dayInMs).toISOString(),
+    createdAt: isoFromCampaign(7, 8),
     product: mockProducts[1],
     user: {
       id: 'mock-user-2',

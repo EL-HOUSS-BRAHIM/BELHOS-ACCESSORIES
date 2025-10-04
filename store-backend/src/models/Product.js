@@ -1,18 +1,22 @@
 const { db } = require('../config/firebase');
+const { resolveTimestamp } = require('../config/launchDate');
 
 class Product {
   static async create(productData) {
     try {
-      const productRef = await db.collection('products').add({
-        name: productData.name,
-        description: productData.description || '',
-        price: productData.price,
-        imageUrl: productData.imageUrl,
-        category: productData.category || '',
-        stock: productData.stock || 0,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
+      const { createdAt, updatedAt, ...rest } = productData || {};
+      const productRecord = {
+        name: rest.name,
+        description: rest.description || '',
+        price: rest.price,
+        imageUrl: rest.imageUrl,
+        category: rest.category || '',
+        stock: rest.stock || 0,
+        createdAt: resolveTimestamp(createdAt),
+        updatedAt: resolveTimestamp(updatedAt || createdAt)
+      };
+
+      const productRef = await db.collection('products').add(productRecord);
       
       const productDoc = await productRef.get();
       return { id: productRef.id, ...productDoc.data() };
@@ -69,8 +73,11 @@ class Product {
 
   static async update(id, updateData) {
     try {
-      updateData.updatedAt = new Date();
-      await db.collection('products').doc(id).update(updateData);
+      const dataToPersist = {
+        ...updateData,
+        updatedAt: resolveTimestamp(updateData.updatedAt),
+      };
+      await db.collection('products').doc(id).update(dataToPersist);
       return await this.findById(id);
     } catch (error) {
       throw new Error(`Error updating product: ${error.message}`);
@@ -118,7 +125,7 @@ class Product {
 
       await productRef.update({
         stock: Math.trunc(newStock),
-        updatedAt: new Date()
+        updatedAt: resolveTimestamp()
       });
 
       return await this.findById(id);
