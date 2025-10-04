@@ -68,13 +68,13 @@ export default function BoutiquePage() {
   }, [fetchProducts, isReady]);
 
   // Get unique categories
-  const categories = [
+  const categories: string[] = [
     'all',
     ...Array.from(
       new Set(
         products
           .map((product) => product.category)
-          .filter((category): category is string => typeof category === 'string' && category.trim().length > 0),
+          .filter((category): category is NonNullable<typeof category> => category !== undefined && category !== null && category.trim().length > 0),
       ),
     ),
   ];
@@ -171,7 +171,7 @@ export default function BoutiquePage() {
               {categories.map((category) => (
                 <button
                   key={category}
-                  onClick={() => setSelectedCategory(category)}
+                  onClick={() => setSelectedCategory(category || 'all')}
                   className={`rounded-full px-6 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.35em] transition ${
                     selectedCategory === category
                       ? 'bg-black text-white'

@@ -23,23 +23,14 @@ type ProductFormData = {
   imageUrl: string;
   category: '' | CategoryValue;
   stock: string;
+  isHot?: boolean;
+  badge?: string;
+  salePrice?: string;
 };
 
 const truncateText = (text: string, maxLength = 120) => {
   if (!text) return '';
   return text.length > maxLength ? `${text.slice(0, maxLength)}…` : text;
-};
-
-type ProductFormState = {
-  name: string;
-  description: string;
-  price: string;
-  imageUrl: string;
-  category: string;
-  stock: string;
-  isHot: boolean;
-  badge: string;
-  salePrice: string;
 };
 
 export default function AdminPage() {
@@ -157,9 +148,9 @@ export default function AdminPage() {
       if (mode === 'mock') {
         const price = Number.parseFloat(formData.price);
         const stock = Number.parseInt(formData.stock, 10);
-        const salePriceValue = parseSalePriceInput(formData.salePrice);
+        const salePriceValue = parseSalePriceInput(formData.salePrice || '');
         const normalizedSalePrice = salePriceValue === undefined ? null : salePriceValue;
-        const badgeValue = normalizeBadgeInput(formData.badge);
+        const badgeValue = normalizeBadgeInput(formData.badge || '');
         const newProduct: Product = {
           id: `mock-prod-${Date.now()}`,
           name: formData.name,
@@ -176,11 +167,6 @@ export default function AdminPage() {
         };
         setProducts((prev) => [newProduct, ...prev]);
       } else {
-        const priceValue = Number.parseFloat(formData.price);
-        const stockValue = Number.parseInt(formData.stock, 10);
-        const salePriceValue = parseSalePriceInput(formData.salePrice);
-        const normalizedSalePrice = salePriceValue === undefined ? null : salePriceValue;
-        const badgeValue = normalizeBadgeInput(formData.badge);
         await api.post('/products', {
           name: formData.name,
           description: resolvedDescription,
@@ -212,8 +198,9 @@ export default function AdminPage() {
       if (mode === 'mock') {
         const price = Number.parseFloat(formData.price);
         const stock = Number.parseInt(formData.stock, 10);
-        const salePriceValue = parseSalePriceInput(formData.salePrice);
-        const badgeValue = normalizeBadgeInput(formData.badge);
+        const salePriceValue = parseSalePriceInput(formData.salePrice || '');
+        const normalizedSalePrice = salePriceValue === undefined ? null : salePriceValue;
+        const badgeValue = normalizeBadgeInput(formData.badge || '');
         setProducts((prev) =>
           prev.map((product) =>
             product.id === editingProduct.id
@@ -225,18 +212,15 @@ export default function AdminPage() {
                   imageUrl: formData.imageUrl,
                   category: resolvedCategory,
                   stock: Number.isNaN(stock) ? product.stock : stock,
+                  isHot: formData.isHot,
+                  badge: badgeValue,
+                  salePrice: normalizedSalePrice,
                   updatedAt: new Date().toISOString(),
                 }
               : product,
           ),
         );
       } else {
-        const priceValue = Number.parseFloat(formData.price);
-        const stockValue = Number.parseInt(formData.stock, 10);
-        const salePriceValue = parseSalePriceInput(formData.salePrice);
-        const normalizedSalePrice =
-          salePriceValue === undefined ? editingProduct.salePrice : salePriceValue;
-        const badgeValue = normalizeBadgeInput(formData.badge);
         await api.put(`/products/${editingProduct.id}`, {
           name: formData.name,
           description: resolvedDescription,

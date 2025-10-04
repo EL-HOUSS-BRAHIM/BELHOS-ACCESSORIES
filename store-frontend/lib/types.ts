@@ -8,13 +8,12 @@ export interface Product {
   imageUrl: string;
   category?: CategoryValue;
   stock: number;
-  isHot: boolean;
-  badge: string | null;
-  salePrice: number | null;
+  isHot?: boolean;
+  badge?: string | null;
+  salePrice?: number | null;
   createdAt?: string;
   updatedAt?: string;
   highlighted?: boolean;
-  isHot?: boolean;
   isNew?: boolean;
   originalPrice?: number;
   badges?: string[];
