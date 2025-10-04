@@ -6,7 +6,7 @@ const footerLinks = [
     items: [
       { href: '/boutique', label: 'Boutique' },
       { href: '/collections', label: 'Collections' },
-      { href: '/articles', label: 'Journal' },
+      { href: '/boutique', label: 'Catalogue' },
     ],
   },
   {

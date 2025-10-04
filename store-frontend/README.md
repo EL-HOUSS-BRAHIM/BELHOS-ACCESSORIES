@@ -67,7 +67,7 @@ Open [http://localhost:3000](http://localhost:3000)
 ### Public Pages
 
 - **Home (`/`)**: Hero section, featured products, CTA
-- **Articles (`/articles`)**: Product catalog with search
+- **Boutique (`/boutique`)**: Product catalog with search
 - **Contact (`/contact`)**: Contact form and business info
 - **Login/Register**: Authentication pages
 
