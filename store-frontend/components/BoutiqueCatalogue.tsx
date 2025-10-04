@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
+import Link from 'next/link';
+import { StorefrontLayout } from './StorefrontLayout';
 
 interface Product {
   id: number;
@@ -15,18 +16,7 @@ interface Product {
   stock: number;
 }
 
-const navLinks = [
-  { href: '/', label: 'Accueil' },
-  { href: '/boutique', label: 'Boutique' },
-  { href: '/reservations', label: 'Réservations' },
-  { href: '/contact', label: 'Contact' },
-];
-
-interface BoutiqueCatalogueProps {
-  activePath?: string;
-}
-
-export function BoutiqueCatalogue({ activePath = '/boutique' }: BoutiqueCatalogueProps) {
+export function BoutiqueCatalogue() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -72,63 +62,23 @@ export function BoutiqueCatalogue({ activePath = '/boutique' }: BoutiqueCatalogu
     return matchesSearch && matchesCategory;
   });
 
-  const Nav = (
-    <header className="sticky top-0 z-50 border-b border-black/10 bg-white/90 backdrop-blur">
-      <nav className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-6 text-[0.7rem] uppercase tracking-[0.35em] sm:px-6 md:flex-row md:items-center md:justify-between">
-        <Link href="/" className="text-sm font-semibold tracking-[0.45em]">
-          Belhos Accessories
-        </Link>
-        <div className="flex flex-wrap justify-center gap-6 text-[0.65rem] font-medium md:text-xs">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`transition ${link.href === activePath ? 'text-black' : 'hover:text-black/60'}`}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </div>
-        {user ? (
-          <Link
-            href="/reservations"
-            className="inline-flex items-center justify-center rounded-full border border-black px-5 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.35em] transition hover:bg-black hover:text-white"
-          >
-            Mes réservations
-          </Link>
-        ) : (
-          <Link
-            href="/login"
-            className="inline-flex items-center justify-center rounded-full border border-black px-5 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.35em] transition hover:bg-black hover:text-white"
-          >
-            Se connecter
-          </Link>
-        )}
-      </nav>
-    </header>
-  );
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-white text-black">
-        {Nav}
-        <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6">
-          <div className="flex flex-col items-center justify-center space-y-6">
-            <div className="h-12 w-12 animate-spin rounded-full border-2 border-black/20 border-t-black"></div>
-            <p className="text-sm uppercase tracking-[0.35em] text-black/60">Chargement de la boutique...</p>
-          </div>
+      <StorefrontLayout activePath="/boutique">
+        <div className="flex flex-col items-center justify-center space-y-6 py-24">
+          <div className="h-12 w-12 animate-spin rounded-full border-2 border-black/20 border-t-black"></div>
+          <p className="text-sm uppercase tracking-[0.35em] text-black/60">Chargement de la boutique...</p>
         </div>
-      </div>
+      </StorefrontLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-white text-black">
-        {Nav}
-        <div className="mx-auto max-w-2xl px-4 py-24 sm:px-6">
+      <StorefrontLayout activePath="/boutique">
+        <div className="mx-auto w-full max-w-2xl py-24">
           <div className="rounded-3xl border border-black/10 bg-white p-12 text-center shadow-sm">
-            <div className="text-4xl mb-6">⚠️</div>
+            <div className="mb-6 text-4xl">⚠️</div>
             <h2 className="mb-3 text-xl font-semibold tracking-[0.2em]">Une erreur est survenue</h2>
             <p className="mb-8 text-sm text-black/60">{error}</p>
             <button
@@ -139,15 +89,13 @@ export function BoutiqueCatalogue({ activePath = '/boutique' }: BoutiqueCatalogu
             </button>
           </div>
         </div>
-      </div>
+      </StorefrontLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white text-black">
-      {Nav}
-
-      <main className="mx-auto max-w-6xl px-4 pb-24 pt-16 sm:px-6 lg:px-8">
+    <StorefrontLayout activePath="/boutique">
+      <main>
         <section className="mb-16 space-y-8 text-center">
           <span className="inline-flex items-center rounded-full bg-black px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-white">
             Boutique Exclusive
@@ -292,6 +240,6 @@ export function BoutiqueCatalogue({ activePath = '/boutique' }: BoutiqueCatalogu
           </section>
         )}
       </main>
-    </div>
+    </StorefrontLayout>
   );
 }

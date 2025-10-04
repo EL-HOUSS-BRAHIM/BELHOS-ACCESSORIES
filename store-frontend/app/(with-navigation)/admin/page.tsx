@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
@@ -33,6 +34,11 @@ interface Reservation {
     price: number;
   };
 }
+
+const truncateText = (text: string, maxLength = 120) => {
+  if (!text) return '';
+  return text.length > maxLength ? `${text.slice(0, maxLength)}…` : text;
+};
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'products' | 'reservations'>('products');
