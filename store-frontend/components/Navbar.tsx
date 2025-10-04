@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
 
-export default function Navbar() {
+export function Navbar() {
   const { user, logout, isAdmin } = useAuth();
 
   return (
@@ -62,3 +62,5 @@ export default function Navbar() {
     </nav>
   );
 }
+
+export default Navbar;
