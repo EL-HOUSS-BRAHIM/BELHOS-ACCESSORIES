@@ -21,8 +21,8 @@ export default function MentionsLegalesPage() {
         <section>
           <h2 className="text-2xl font-semibold mb-3">Hébergement</h2>
           <p>
-            Nom de l'hébergeur<br />
-            Adresse de l'hébergeur<br />
+            Nom de l&apos;hébergeur<br />
+            Adresse de l&apos;hébergeur<br />
             Téléphone : +33 1 98 76 54 32
           </p>
         </section>
@@ -30,7 +30,7 @@ export default function MentionsLegalesPage() {
         <section>
           <h2 className="text-2xl font-semibold mb-3">Propriété intellectuelle</h2>
           <p>
-            L'ensemble des contenus présents sur ce site (textes, images, logos, etc.) sont la
+            L&apos;ensemble des contenus présents sur ce site (textes, images, logos, etc.) sont la
             propriété de Belhos Accessories ou de ses partenaires. Toute reproduction, représentation,
             modification ou adaptation, totale ou partielle, est strictement interdite sans
             autorisation préalable.
@@ -42,7 +42,7 @@ export default function MentionsLegalesPage() {
           <p>
             Les informations communiquées sur ce site sont fournies à titre indicatif et peuvent être
             modifiées à tout moment. Belhos Accessories ne saurait être tenue responsable des dommages
-            directs ou indirects résultant de l'utilisation du site ou des informations qu'il contient.
+            directs ou indirects résultant de l&apos;utilisation du site ou des informations qu&apos;il contient.
           </p>
         </section>
       </div>
