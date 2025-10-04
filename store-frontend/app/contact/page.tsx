@@ -2,14 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-
-const navLinks = [
-  { href: '/', label: 'Accueil' },
-  { href: '/boutique', label: 'Boutique' },
-  { href: '/collections', label: 'Collections' },
-  { href: '/reservations', label: 'Réservations' },
-  { href: '/contact', label: 'Contact' },
-];
+import { StorefrontLayout } from '@/components/StorefrontLayout';
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -39,36 +32,8 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-black">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-black/10 bg-white/90 backdrop-blur">
-        <nav className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-6 text-[0.7rem] uppercase tracking-[0.35em] sm:px-6 md:flex-row md:items-center md:justify-between">
-          <Link href="/" className="text-sm font-semibold tracking-[0.45em]">
-            Belhos Accessories
-          </Link>
-          <div className="flex flex-wrap justify-center gap-6 text-[0.65rem] font-medium md:text-xs">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`transition ${
-                  link.href === '/contact' ? 'text-black' : 'hover:text-black/60'
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-          <Link
-            href="/reservations"
-            className="inline-flex items-center justify-center rounded-full border border-black px-5 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.35em] transition hover:bg-black hover:text-white"
-          >
-            Mes réservations
-          </Link>
-        </nav>
-      </header>
-
-      <main className="mx-auto max-w-6xl px-4 pb-24 pt-16 sm:px-6 lg:px-8">
+    <StorefrontLayout activePath="/contact">
+      <main>
         {/* Hero Section */}
         <section className="mb-16 space-y-8 text-center">
           <span className="inline-flex items-center rounded-full bg-black px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-white">
@@ -280,6 +245,6 @@ export default function ContactPage() {
           </div>
         </section>
       </main>
-    </div>
+    </StorefrontLayout>
   );
 }
