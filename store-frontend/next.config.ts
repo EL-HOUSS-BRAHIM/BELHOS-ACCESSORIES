@@ -19,6 +19,7 @@ const nextConfig: NextConfig = {
   },
   // Optimize for Vercel deployment
   output: 'standalone',
+  outputFileTracingRoot: '/home/bross/BELHOS-ACCESSORIES',
   // Environment variables validation
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
