@@ -49,6 +49,9 @@ export const mockProducts: Product[] = [
   },
 ];
 
+const now = new Date();
+const dayInMs = 24 * 60 * 60 * 1000;
+
 export const mockHighlightedProducts: Product[] = [
   {
     id: 'mock-highlight-1',
