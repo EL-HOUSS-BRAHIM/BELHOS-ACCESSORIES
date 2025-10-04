@@ -1,6 +1,27 @@
 const { db } = require('../config/firebase');
 const { resolveTimestamp } = require('../config/launchDate');
 
+const normalizeProductDocument = productDoc => {
+  if (!productDoc || typeof productDoc.data !== 'function') {
+    return null;
+  }
+
+  const data = productDoc.data();
+  const isHot = data.isHot === true;
+  const badge =
+    typeof data.badge === 'string' && data.badge.trim().length > 0 ? data.badge.trim() : null;
+  const salePrice =
+    typeof data.salePrice === 'number' && Number.isFinite(data.salePrice) ? data.salePrice : null;
+
+  return {
+    id: productDoc.id,
+    ...data,
+    isHot,
+    badge,
+    salePrice
+  };
+};
+
 class Product {
   static async create(productData) {
     try {
@@ -19,7 +40,12 @@ class Product {
       const productRef = await db.collection('products').add(productRecord);
       
       const productDoc = await productRef.get();
-      return { id: productRef.id, ...productDoc.data() };
+      const normalized = normalizeProductDocument(productDoc);
+      if (!normalized) {
+        throw new Error('Created product could not be normalized');
+      }
+
+      return normalized;
     } catch (error) {
       throw new Error(`Error creating product: ${error.message}`);
     }
@@ -48,9 +74,12 @@ class Product {
       const products = [];
       
       snapshot.forEach(doc => {
-        products.push({ id: doc.id, ...doc.data() });
+        const normalized = normalizeProductDocument(doc);
+        if (normalized) {
+          products.push(normalized);
+        }
       });
-      
+
       return products;
     } catch (error) {
       throw new Error(`Error fetching products: ${error.message}`);
@@ -60,12 +89,17 @@ class Product {
   static async findById(id) {
     try {
       const productDoc = await db.collection('products').doc(id).get();
-      
+
       if (!productDoc.exists) {
         return null;
       }
-      
-      return { id: productDoc.id, ...productDoc.data() };
+
+      const normalized = normalizeProductDocument(productDoc);
+      if (!normalized) {
+        throw new Error('Product document is malformed');
+      }
+
+      return normalized;
     } catch (error) {
       throw new Error(`Error finding product: ${error.message}`);
     }
@@ -134,5 +168,7 @@ class Product {
     }
   }
 }
+
+Product.normalizeProductDocument = normalizeProductDocument;
 
 module.exports = Product;

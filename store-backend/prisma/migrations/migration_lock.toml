@@ -1,0 +1,4 @@
+# Prisma Migrate lockfile
+# This file is automatically created and updated by Prisma Migrate.
+# It should be committed to source control.
+provider = "postgresql"
