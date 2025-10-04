@@ -89,14 +89,15 @@ export default function Home() {
         <section className="grid gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
           <div className="space-y-8">
             <span className="inline-flex items-center rounded-full bg-black px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-white">
-              Nouvelle Collection 2024
+              Campagne Octobre 2025
             </span>
             <h1 className="text-3xl font-semibold tracking-[0.15em] sm:text-4xl lg:text-5xl">
-              Intemporel & Lumineux
+              Intemporel & Lumineux pour Octobre 2025
             </h1>
             <p className="max-w-xl text-sm leading-relaxed text-black/70 sm:text-base">
-              Des silhouettes sobres, sculptées dans des matières nobles, pensées pour souligner chaque instant de votre journée.
-              Notre équipe sélectionne des pièces raffinées qui dialoguent avec la lumière et la texture.
+              Une sélection capsule imaginée pour la campagne d’octobre 2025 : des silhouettes sobres, sculptées dans des matières
+              nobles, pensées pour illuminer vos moments de lancement. Notre équipe sélectionne des pièces raffinées qui dialoguent
+              avec la lumière et la texture.
             </p>
             <div className="flex flex-wrap gap-4 text-[0.65rem] uppercase tracking-[0.25em]">
               <Link

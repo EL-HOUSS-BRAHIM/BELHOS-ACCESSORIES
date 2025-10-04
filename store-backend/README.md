@@ -60,6 +60,7 @@ store-backend/
 | `FIREBASE_SERVICE_ACCOUNT_KEY` | JSON string of service-account credentials | ✅ (Vercel) / ➖ (local default credentials) | `{ "type": "service_account", ... }` |
 | `FIREBASE_DATABASE_URL` | Firebase database URL used during Admin init | ✅ when using `FIREBASE_SERVICE_ACCOUNT_KEY` | `https://<project-id>.firebaseio.com` |
 | `GOOGLE_APPLICATION_CREDENTIALS` | File path to service-account JSON (local only) | ➖ | `/path/to/serviceAccount.json` |
+| `CAMPAIGN_LAUNCH_DATE` | ISO date used for campaign-aligned timestamps (defaults to `2025-10-01T09:00:00.000Z`) | ➖ | `2025-10-15T08:00:00.000Z` |
 
 > **Tip:** When copying the JSON into `FIREBASE_SERVICE_ACCOUNT_KEY`, escape double quotes or use single quotes in your `.env` file.
 
