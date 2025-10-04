@@ -87,7 +87,75 @@ export default function Home() {
       <HomeHeader links={navLinks} />
 
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-16 px-4 pb-24 pt-20 sm:gap-20 sm:px-6 lg:gap-24 lg:px-8">
-        <HotProductsCarousel />
+        <section className="grid gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+          <div className="space-y-8">
+            <span className="inline-flex items-center rounded-full bg-black px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-white">
+              Campagne Octobre 2025
+            </span>
+            <h1 className="text-3xl font-semibold tracking-[0.15em] sm:text-4xl lg:text-5xl">
+              Intemporel & Lumineux pour Octobre 2025
+            </h1>
+            <p className="max-w-xl text-sm leading-relaxed text-black/70 sm:text-base">
+              Une sélection capsule imaginée pour la campagne d’octobre 2025 : des silhouettes sobres, sculptées dans des matières
+              nobles, pensées pour illuminer vos moments de lancement. Notre équipe sélectionne des pièces raffinées qui dialoguent
+              avec la lumière et la texture.
+            </p>
+            <div className="flex flex-wrap gap-4 text-[0.65rem] uppercase tracking-[0.25em]">
+              <Link
+                href="/boutique"
+                className="inline-flex items-center justify-center rounded-full bg-black px-8 py-3 font-semibold text-white transition hover:bg-black/80"
+              >
+                Découvrir la boutique
+              </Link>
+              <Link
+                href="#collections"
+                className="inline-flex items-center justify-center rounded-full border border-black px-8 py-3 font-semibold transition hover:bg-black hover:text-white"
+              >
+                Explorer les collections
+              </Link>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
+                <p className="text-[0.65rem] uppercase tracking-[0.25em] text-black/60">Pièces sur mesure</p>
+                <p className="mt-3 text-xl font-semibold">48h</p>
+                <p className="mt-1 text-xs text-black/60">Délai de conception</p>
+              </div>
+              <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
+                <p className="text-[0.65rem] uppercase tracking-[0.25em] text-black/60">Ateliers privés</p>
+                <p className="mt-3 text-xl font-semibold">2 villes</p>
+                <p className="mt-1 text-xs text-black/60">Casablanca & Rabat</p>
+              </div>
+              <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
+                <p className="text-[0.65rem] uppercase tracking-[0.25em] text-black/60">Clients fidèles</p>
+                <p className="mt-3 text-xl font-semibold">8k+</p>
+                <p className="mt-1 text-xs text-black/60">Depuis 2012</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="relative overflow-hidden rounded-[32px] border border-black/10 bg-white p-4 shadow-lg shadow-black/5">
+              <div className="relative h-72 w-full overflow-hidden rounded-[24px] sm:h-[22rem]">
+                <Image
+                  src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=1200&q=80"
+                  alt="Montre et accessoires Belhos"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-cover"
+                  priority
+                />
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {curatedCollections.slice(0, 2).map((collection) => (
+                <div key={collection.title} className="rounded-2xl border border-black/10 bg-white p-5 text-sm shadow-sm">
+                  <p className="text-[0.65rem] uppercase tracking-[0.25em] text-black/60">{collection.title}</p>
+                  <p className="mt-2 text-xs uppercase tracking-[0.25em] text-black/60">{collection.priceRange}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
         <div id="collections">
           <CuratedCollectionsSection />
