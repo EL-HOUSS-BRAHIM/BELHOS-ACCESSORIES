@@ -49,9 +49,6 @@ export const mockProducts: Product[] = [
   },
 ];
 
-const now = new Date();
-const dayInMs = 24 * 60 * 60 * 1000;
-
 export const mockHighlightedProducts: Product[] = [
   {
     id: 'mock-highlight-1',
@@ -64,8 +61,8 @@ export const mockHighlightedProducts: Product[] = [
       'https://images.unsplash.com/photo-1612810806695-30ba0b38fa13?auto=format&fit=crop&w=900&q=80',
     category: 'bag',
     stock: 4,
-    createdAt: new Date(now.getTime() - dayInMs / 2).toISOString(),
-    updatedAt: new Date(now.getTime() - dayInMs / 4).toISOString(),
+    createdAt: isoFromCampaign(0, 12),
+    updatedAt: isoFromCampaign(1, 6),
     highlighted: true,
     isHot: true,
     badges: ['Atelier Casablanca'],
@@ -81,8 +78,8 @@ export const mockHighlightedProducts: Product[] = [
       'https://images.unsplash.com/photo-1519408469771-2586093c3f14?auto=format&fit=crop&w=900&q=80',
     category: 'watch',
     stock: 3,
-    createdAt: new Date(now.getTime() - 2 * dayInMs).toISOString(),
-    updatedAt: new Date(now.getTime() - dayInMs).toISOString(),
+    createdAt: isoFromCampaign(1, 18),
+    updatedAt: isoFromCampaign(2, 12),
     highlighted: true,
     isHot: true,
     badges: ['Édition numérotée'],
@@ -97,8 +94,8 @@ export const mockHighlightedProducts: Product[] = [
       'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80',
     category: 'earrings',
     stock: 8,
-    createdAt: new Date(now.getTime() - dayInMs).toISOString(),
-    updatedAt: new Date(now.getTime() - dayInMs / 6).toISOString(),
+    createdAt: isoFromCampaign(2, 20),
+    updatedAt: isoFromCampaign(3, 8),
     highlighted: true,
     isNew: true,
     badges: ['Nouvelle collection'],
@@ -112,8 +109,8 @@ export const mockHighlightedProducts: Product[] = [
       'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=600&q=80',
     category: 'shoes',
     stock: 8,
-    createdAt: new Date(now.getTime() - 2 * dayInMs).toISOString(),
-    updatedAt: new Date(now.getTime() - dayInMs).toISOString(),
+    createdAt: isoFromCampaign(3, 12),
+    updatedAt: isoFromCampaign(4, 4),
   },
   {
     id: 'mock-prod-5',
@@ -124,8 +121,8 @@ export const mockHighlightedProducts: Product[] = [
       'https://images.unsplash.com/photo-1612810806695-30ba0a094907?auto=format&fit=crop&w=600&q=80',
     category: 'bag',
     stock: 4,
-    createdAt: new Date(now.getTime() - 4 * dayInMs).toISOString(),
-    updatedAt: new Date(now.getTime() - 3 * dayInMs).toISOString(),
+    createdAt: isoFromCampaign(4, 18),
+    updatedAt: isoFromCampaign(5, 10),
   },
   {
     id: 'mock-prod-6',
@@ -136,8 +133,8 @@ export const mockHighlightedProducts: Product[] = [
       'https://images.unsplash.com/photo-1524594154907-23c985ca5c0c?auto=format&fit=crop&w=600&q=80',
     category: 'watch',
     stock: 3,
-    createdAt: new Date(now.getTime() - 6 * dayInMs).toISOString(),
-    updatedAt: new Date(now.getTime() - 4 * dayInMs).toISOString(),
+    createdAt: isoFromCampaign(5, 22),
+    updatedAt: isoFromCampaign(7, 6),
   },
   {
     id: 'mock-prod-7',
@@ -148,8 +145,8 @@ export const mockHighlightedProducts: Product[] = [
       'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=600&q=80',
     category: 'clothes',
     stock: 6,
-    createdAt: new Date(now.getTime() - 8 * dayInMs).toISOString(),
-    updatedAt: new Date(now.getTime() - 7 * dayInMs).toISOString(),
+    createdAt: isoFromCampaign(7, 12),
+    updatedAt: isoFromCampaign(8, 9),
   },
   {
     id: 'mock-prod-8',
@@ -160,8 +157,8 @@ export const mockHighlightedProducts: Product[] = [
       'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&w=600&q=80',
     category: 'tech',
     stock: 10,
-    createdAt: new Date(now.getTime() - 5 * dayInMs).toISOString(),
-    updatedAt: new Date(now.getTime() - 4 * dayInMs).toISOString(),
+    createdAt: isoFromCampaign(6, 15),
+    updatedAt: isoFromCampaign(7, 18),
   },
 ];
 
