@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+import { CAMPAIGN_YEAR } from '@/lib/campaign';
+
 const footerLinks = [
   {
     title: 'Maison',
@@ -65,7 +67,7 @@ export function SiteFooter() {
 
         <div className="mt-12 flex flex-col gap-3 border-t border-black/10 pt-6 text-xs text-black/60 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
-            <p>&copy; {new Date().getFullYear()} Belhos Accessories. Tous droits réservés.</p>
+            <p>&copy; {CAMPAIGN_YEAR} Belhos Accessories. Tous droits réservés.</p>
             <p>
               Réalisé par{' '}
               <Link

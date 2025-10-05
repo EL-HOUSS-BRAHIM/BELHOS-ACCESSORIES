@@ -1,6 +1,5 @@
 import type { Product, Reservation } from './types';
-
-const CAMPAIGN_BASE_ISO = '2025-10-01T09:00:00.000Z';
+import { CAMPAIGN_BASE_ISO } from './campaign';
 
 const isoFromCampaign = (daysOffset: number, hoursOffset = 0) => {
   const base = new Date(CAMPAIGN_BASE_ISO);
