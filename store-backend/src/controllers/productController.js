@@ -83,6 +83,67 @@ const parseNullableNumber = value => {
   throw new TypeError('Invalid numeric value');
 };
 
+const parseBadgeList = value => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value === null) {
+    return [];
+  }
+
+  const sanitizeEntries = entries => {
+    return entries.reduce((acc, entry) => {
+      if (entry === null || entry === undefined) {
+        return acc;
+      }
+
+      if (typeof entry !== 'string') {
+        throw new TypeError('Invalid badge value');
+      }
+
+      const trimmed = entry.trim();
+      if (trimmed.length > 0) {
+        acc.push(trimmed);
+      }
+
+      return acc;
+    }, []);
+  };
+
+  if (Array.isArray(value)) {
+    return sanitizeEntries(value);
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+
+    if (trimmed.length === 0) {
+      return [];
+    }
+
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          return sanitizeEntries(parsed);
+        }
+      } catch (error) {
+        // Fall through to comma-separated parsing
+      }
+    }
+
+    const parts = trimmed
+      .split(',')
+      .map(part => part.trim())
+      .filter(part => part.length > 0);
+
+    return sanitizeEntries(parts);
+  }
+
+  throw new TypeError('Invalid badges value');
+};
+
 // Get all products
 const getAllProducts = async (req, res) => {
   try {
@@ -134,7 +195,21 @@ const getProductById = async (req, res) => {
 // Create product (Admin only)
 const createProduct = async (req, res) => {
   try {
-    const { name, description, price, imageUrl, category, stock, isHot, badge, salePrice } = req.body;
+    const {
+      name,
+      description,
+      price,
+      imageUrl,
+      category,
+      stock,
+      isHot,
+      highlighted,
+      isNew,
+      badge,
+      badges,
+      salePrice,
+      originalPrice
+    } = req.body;
 
     const parsedPrice = price !== undefined ? Number.parseFloat(price) : undefined;
     if (parsedPrice !== undefined && Number.isNaN(parsedPrice)) {
@@ -147,13 +222,21 @@ const createProduct = async (req, res) => {
     }
 
     let parsedIsHot;
+    let parsedHighlighted;
+    let parsedIsNew;
     let parsedBadge;
+    let parsedBadges;
     let parsedSalePrice;
+    let parsedOriginalPrice;
 
     try {
       parsedIsHot = parseBoolean(isHot);
+      parsedHighlighted = parseBoolean(highlighted);
+      parsedIsNew = parseBoolean(isNew);
       parsedBadge = parseNullableString(badge);
+      parsedBadges = parseBadgeList(badges);
       parsedSalePrice = parseNullableNumber(salePrice);
+      parsedOriginalPrice = parseNullableNumber(originalPrice);
     } catch (parseError) {
       if (parseError instanceof TypeError) {
         return res.status(400).json({ error: parseError.message });
@@ -173,7 +256,14 @@ const createProduct = async (req, res) => {
       price: parsedPrice,
       imageUrl,
       category: normalizedCategory || undefined,
-      stock: stock !== undefined ? Number.parseInt(stock, 10) : 0
+      stock: parsedStock,
+      ...(parsedIsHot !== undefined ? { isHot: parsedIsHot } : {}),
+      ...(parsedHighlighted !== undefined ? { highlighted: parsedHighlighted } : {}),
+      ...(parsedIsNew !== undefined ? { isNew: parsedIsNew } : {}),
+      ...(parsedBadge !== undefined ? { badge: parsedBadge } : {}),
+      ...(parsedBadges !== undefined ? { badges: parsedBadges } : {}),
+      ...(parsedSalePrice !== undefined ? { salePrice: parsedSalePrice } : {}),
+      ...(parsedOriginalPrice !== undefined ? { originalPrice: parsedOriginalPrice } : {})
     });
 
     res.status(201).json({ message: 'Product created', product });
